@@ -1,13 +1,12 @@
 #![deny(warnings)]
 #![forbid(unsafe_code)]
-use bincode::enc::write::Writer;
 use cairo_vm::cairo_run::{self, EncodeTraceError};
 use cairo_vm::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::BuiltinHintProcessor;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::errors::trace_errors::TraceError;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
+use cairo_vm::write::BufWriter;
 use clap::{Parser, ValueHint};
-use std::io::{self, Write};
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -70,39 +69,6 @@ enum Error {
     Trace(#[from] TraceError),
 }
 
-struct FileWriter {
-    buf_writer: io::BufWriter<std::fs::File>,
-    bytes_written: usize,
-}
-
-impl Writer for FileWriter {
-    fn write(&mut self, bytes: &[u8]) -> Result<(), bincode::error::EncodeError> {
-        self.buf_writer
-            .write_all(bytes)
-            .map_err(|e| bincode::error::EncodeError::Io {
-                inner: e,
-                index: self.bytes_written,
-            })?;
-
-        self.bytes_written += bytes.len();
-
-        Ok(())
-    }
-}
-
-impl FileWriter {
-    fn new(buf_writer: io::BufWriter<std::fs::File>) -> Self {
-        Self {
-            buf_writer,
-            bytes_written: 0,
-        }
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.buf_writer.flush()
-    }
-}
-
 fn run(args: impl Iterator<Item = String>) -> Result<(), Error> {
     let args = Args::try_parse_from(args);
     let args = match args {
@@ -144,8 +110,7 @@ fn run(args: impl Iterator<Item = String>) -> Result<(), Error> {
         let relocated_trace = vm.get_relocated_trace()?;
 
         let trace_file = std::fs::File::create(trace_path)?;
-        let mut trace_writer =
-            FileWriter::new(io::BufWriter::with_capacity(3 * 1024 * 1024, trace_file));
+        let mut trace_writer = BufWriter::with_capacity(3 * 1024 * 1024, trace_file);
 
         cairo_run::write_encoded_trace(relocated_trace, &mut trace_writer)?;
         trace_writer.flush()?;
@@ -153,8 +118,7 @@ fn run(args: impl Iterator<Item = String>) -> Result<(), Error> {
 
     if let Some(memory_path) = args.memory_file {
         let memory_file = std::fs::File::create(memory_path)?;
-        let mut memory_writer =
-            FileWriter::new(io::BufWriter::with_capacity(5 * 1024 * 1024, memory_file));
+        let mut memory_writer = BufWriter::with_capacity(5 * 1024 * 1024, memory_file);
 
         cairo_run::write_encoded_memory(&cairo_runner.relocated_memory, &mut memory_writer)?;
         memory_writer.flush()?;

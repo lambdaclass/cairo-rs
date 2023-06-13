@@ -7,9 +7,9 @@ use crate::{
         security::verify_secure_runner,
         vm_core::VirtualMachine,
     },
+    write::Writer,
 };
 
-use bincode::enc::write::Writer;
 use felt::Felt252;
 
 #[cfg(feature = "std")]
