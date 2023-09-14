@@ -2,6 +2,8 @@
 
 #### Upcoming Changes
 
+* perf: share `constants` field across `Program` instances [#1442](https://github.com/lambdaclass/cairo-vm/pull/1442)
+
 * fix: ec_recover hints no longer panic when divisor is 0 [#1433](https://github.com/lambdaclass/cairo-vm/pull/1433)
 
 * feat: Implement the Serialize and Deserialize traits for the CairoPie struct [#1438](https://github.com/lambdaclass/cairo-vm/pull/1438)

@@ -534,7 +534,7 @@ impl CairoRunner {
     }
 
     pub fn get_constants(&self) -> &HashMap<String, Felt252> {
-        &self.program.constants
+        &self.program.shared_program_data.constants
     }
 
     pub fn get_program_builtins(&self) -> &Vec<BuiltinName> {
@@ -565,7 +565,7 @@ impl CairoRunner {
                 hint_processor,
                 &mut self.exec_scopes,
                 hint_data,
-                &self.program.constants,
+                &self.program.shared_program_data.constants,
             )?;
             hint_processor.consume_step();
         }
@@ -605,7 +605,7 @@ impl CairoRunner {
                 hint_processor,
                 &mut self.exec_scopes,
                 hint_data,
-                &self.program.constants,
+                &self.program.shared_program_data.constants,
             )?;
         }
 

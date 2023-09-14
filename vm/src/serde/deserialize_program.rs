@@ -500,11 +500,11 @@ pub fn parse_program_json(
             .debug_info
             .map(|debug_info| debug_info.instruction_locations),
         identifiers: program_json.identifiers,
+        constants,
         reference_manager: Program::get_reference_list(&program_json.reference_manager),
     };
     Ok(Program {
         shared_program_data: Arc::new(shared_program_data),
-        constants,
         builtins: program_json.builtins,
     })
 }
