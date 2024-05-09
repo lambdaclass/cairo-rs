@@ -1,5 +1,6 @@
 use crate::stdlib::{
     fmt::{self, Display},
+    hash::{Hash, Hasher},
     ops::{Add, AddAssign, Sub},
     prelude::*,
 };
@@ -15,12 +16,16 @@ use serde::{Deserialize, Serialize};
 use arbitrary::Arbitrary;
 
 #[cfg_attr(feature = "test_utils", derive(Arbitrary))]
-#[derive(
-    Eq, Ord, Hash, PartialEq, PartialOrd, Clone, Copy, Debug, Serialize, Deserialize, Default,
-)]
+#[derive(Eq, Ord, PartialEq, PartialOrd, Clone, Copy, Debug, Serialize, Deserialize, Default)]
 pub struct Relocatable {
     pub segment_index: isize,
     pub offset: usize,
+}
+
+impl Hash for Relocatable {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        (((self.segment_index as i64) << 48) | (self.offset as i64)).hash(state);
+    }
 }
 
 #[cfg_attr(feature = "test_utils", derive(Arbitrary))]

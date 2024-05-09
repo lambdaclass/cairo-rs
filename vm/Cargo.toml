@@ -32,11 +32,9 @@ mod_builtin = []
 
 # Note that these features are not retro-compatible with the cairo Python VM.
 test_utils = ["std", "dep:arbitrary", "starknet-types-core/arbitrary", "starknet-types-core/std"] # This feature will reference every test-oriented feature
-# Allows extending the set of hints for the current vm run from within a hint.
-# For a usage example checkout vm/src/tests/run_deprecated_contract_class_simplified.rs
-extensive_hints = []
 
 [dependencies]
+ahash = { version = "0.8.11", default-features = false, features = ["runtime-rng"] }
 zip = {version = "0.6.6", optional = true }
 num-bigint = { workspace = true }
 rand = { workspace = true }

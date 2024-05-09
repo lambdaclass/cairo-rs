@@ -661,11 +661,7 @@ impl CairoRunner {
         hint_processor: &mut dyn HintProcessor,
     ) -> Result<(), VirtualMachineError> {
         let references = &self.program.shared_program_data.reference_manager;
-        #[cfg(not(feature = "extensive_hints"))]
-        let hint_data = self.get_hint_data(references, hint_processor)?;
-        #[cfg(feature = "extensive_hints")]
         let mut hint_data = self.get_hint_data(references, hint_processor)?;
-        #[cfg(feature = "extensive_hints")]
         let mut hint_ranges = self
             .program
             .shared_program_data
@@ -678,18 +674,7 @@ impl CairoRunner {
             vm.step(
                 hint_processor,
                 &mut self.exec_scopes,
-                #[cfg(feature = "extensive_hints")]
                 &mut hint_data,
-                #[cfg(not(feature = "extensive_hints"))]
-                self.program
-                    .shared_program_data
-                    .hints_collection
-                    .get_hint_range_for_pc(vm.run_context.pc.offset)
-                    .and_then(|range| {
-                        range.and_then(|(start, length)| hint_data.get(start..start + length.get()))
-                    })
-                    .unwrap_or(&[]),
-                #[cfg(feature = "extensive_hints")]
                 &mut hint_ranges,
                 &self.program.constants,
             )?;
@@ -712,27 +697,13 @@ impl CairoRunner {
         hint_processor: &mut dyn HintProcessor,
     ) -> Result<(), VirtualMachineError> {
         let references = &self.program.shared_program_data.reference_manager;
-        #[cfg(not(feature = "extensive_hints"))]
-        let hint_data = self.get_hint_data(references, hint_processor)?;
-        #[cfg(feature = "extensive_hints")]
         let mut hint_data = self.get_hint_data(references, hint_processor)?;
-        #[cfg(feature = "extensive_hints")]
         let mut hint_ranges = self
             .program
             .shared_program_data
             .hints_collection
             .hints_ranges
             .clone();
-        #[cfg(not(feature = "extensive_hints"))]
-        let hint_data = &self
-            .program
-            .shared_program_data
-            .hints_collection
-            .get_hint_range_for_pc(vm.run_context.pc.offset)
-            .and_then(|range| {
-                range.and_then(|(start, length)| hint_data.get(start..start + length.get()))
-            })
-            .unwrap_or(&[]);
 
         for remaining_steps in (1..=steps).rev() {
             if self.final_pc.as_ref() == Some(&vm.run_context.pc) {
@@ -742,11 +713,7 @@ impl CairoRunner {
             vm.step(
                 hint_processor,
                 &mut self.exec_scopes,
-                #[cfg(feature = "extensive_hints")]
                 &mut hint_data,
-                #[cfg(not(feature = "extensive_hints"))]
-                hint_data,
-                #[cfg(feature = "extensive_hints")]
                 &mut hint_ranges,
                 &self.program.constants,
             )?;

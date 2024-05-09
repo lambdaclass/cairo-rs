@@ -1,7 +1,6 @@
 use crate::math_utils::signed_felt;
 use crate::stdlib::{any::Any, borrow::Cow, collections::HashMap, prelude::*};
 use crate::types::builtin_name::BuiltinName;
-#[cfg(feature = "extensive_hints")]
 use crate::types::program::HintRange;
 use crate::{
     hint_processor::hint_processor_definition::HintProcessor,
@@ -30,7 +29,6 @@ use crate::{
 
 use crate::Felt252;
 use core::cmp::Ordering;
-#[cfg(feature = "extensive_hints")]
 use core::num::NonZeroUsize;
 use num_traits::{ToPrimitive, Zero};
 
@@ -454,29 +452,12 @@ impl VirtualMachine {
         decode_instruction(instruction)
     }
 
-    #[cfg(not(feature = "extensive_hints"))]
-    pub fn step_hint(
-        &mut self,
-        hint_processor: &mut dyn HintProcessor,
-        exec_scopes: &mut ExecutionScopes,
-        hint_datas: &[Box<dyn Any>],
-        constants: &HashMap<String, Felt252>,
-    ) -> Result<(), VirtualMachineError> {
-        for (hint_index, hint_data) in hint_datas.iter().enumerate() {
-            hint_processor
-                .execute_hint(self, exec_scopes, hint_data, constants)
-                .map_err(|err| VirtualMachineError::Hint(Box::new((hint_index, err))))?
-        }
-        Ok(())
-    }
-
-    #[cfg(feature = "extensive_hints")]
     pub fn step_hint(
         &mut self,
         hint_processor: &mut dyn HintProcessor,
         exec_scopes: &mut ExecutionScopes,
         hint_datas: &mut Vec<Box<dyn Any>>,
-        hint_ranges: &mut HashMap<Relocatable, HintRange>,
+        hint_ranges: &mut HashMap<Relocatable, HintRange, ahash::RandomState>,
         constants: &HashMap<String, Felt252>,
     ) -> Result<(), VirtualMachineError> {
         // Check if there is a hint range for the current pc
@@ -548,16 +529,14 @@ impl VirtualMachine {
         &mut self,
         hint_processor: &mut dyn HintProcessor,
         exec_scopes: &mut ExecutionScopes,
-        #[cfg(feature = "extensive_hints")] hint_datas: &mut Vec<Box<dyn Any>>,
-        #[cfg(not(feature = "extensive_hints"))] hint_datas: &[Box<dyn Any>],
-        #[cfg(feature = "extensive_hints")] hint_ranges: &mut HashMap<Relocatable, HintRange>,
+        hint_datas: &mut Vec<Box<dyn Any>>,
+        hint_ranges: &mut HashMap<Relocatable, HintRange, ahash::RandomState>,
         constants: &HashMap<String, Felt252>,
     ) -> Result<(), VirtualMachineError> {
         self.step_hint(
             hint_processor,
             exec_scopes,
             hint_datas,
-            #[cfg(feature = "extensive_hints")]
             hint_ranges,
             constants,
         )?;
@@ -2792,8 +2771,7 @@ mod tests {
                 &mut hint_processor,
                 exec_scopes_ref!(),
                 &mut Vec::new(),
-                #[cfg(feature = "extensive_hints")]
-                &mut HashMap::new(),
+                &mut HashMap::default(),
                 &HashMap::new(),
             ),
             Ok(())
@@ -3023,8 +3001,7 @@ mod tests {
                 &mut hint_processor,
                 exec_scopes_ref!(),
                 &mut Vec::new(),
-                #[cfg(feature = "extensive_hints")]
-                &mut HashMap::new(),
+                &mut HashMap::default(),
                 &HashMap::new(),
             ),
             Ok(())
@@ -3107,8 +3084,7 @@ mod tests {
                     &mut hint_processor,
                     exec_scopes_ref!(),
                     &mut Vec::new(),
-                    #[cfg(feature = "extensive_hints")]
-                    &mut HashMap::new(),
+                    &mut HashMap::default(),
                     &HashMap::new()
                 ),
                 Ok(())
@@ -3211,8 +3187,7 @@ mod tests {
                 &mut hint_processor,
                 exec_scopes_ref!(),
                 &mut Vec::new(),
-                #[cfg(feature = "extensive_hints")]
-                &mut HashMap::new(),
+                &mut HashMap::default(),
                 &HashMap::new()
             ),
             Ok(())
@@ -3234,8 +3209,7 @@ mod tests {
                 &mut hint_processor,
                 exec_scopes_ref!(),
                 &mut Vec::new(),
-                #[cfg(feature = "extensive_hints")]
-                &mut HashMap::new(),
+                &mut HashMap::default(),
                 &HashMap::new()
             ),
             Ok(())
@@ -3258,8 +3232,7 @@ mod tests {
                 &mut hint_processor,
                 exec_scopes_ref!(),
                 &mut Vec::new(),
-                #[cfg(feature = "extensive_hints")]
-                &mut HashMap::new(),
+                &mut HashMap::default(),
                 &HashMap::new()
             ),
             Ok(())
@@ -3814,23 +3787,15 @@ mod tests {
             ((1, 1), (3, 0))
         ];
 
-        #[cfg(feature = "extensive_hints")]
         let mut hint_data = hint_data;
 
         //Run Steps
         for _ in 0..6 {
-            #[cfg(not(feature = "extensive_hints"))]
-            let mut hint_data = if vm.run_context.pc == (0, 0).into() {
-                &hint_data[0..]
-            } else {
-                &hint_data[0..0]
-            };
             assert_matches!(
                 vm.step(
                     &mut hint_processor,
                     exec_scopes_ref!(),
                     &mut hint_data,
-                    #[cfg(feature = "extensive_hints")]
                     &mut HashMap::from([(
                         Relocatable::from((0, 0)),
                         (0_usize, NonZeroUsize::new(1).unwrap())
@@ -4483,8 +4448,7 @@ mod tests {
                 &mut hint_processor,
                 exec_scopes_ref!(),
                 &mut Vec::new(),
-                #[cfg(feature = "extensive_hints")]
-                &mut HashMap::new(),
+                &mut HashMap::default(),
                 &HashMap::new()
             ),
             Ok(())
@@ -4570,8 +4534,7 @@ mod tests {
                     &mut hint_processor,
                     exec_scopes_ref!(),
                     &mut Vec::new(),
-                    #[cfg(feature = "extensive_hints")]
-                    &mut HashMap::new(),
+                    &mut HashMap::default(),
                     &HashMap::new()
                 ),
                 Ok(())
