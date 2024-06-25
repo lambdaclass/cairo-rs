@@ -141,7 +141,7 @@ pub fn cairo_run_program(
 
     let main_func = find_function(sierra_program, "::main")?;
 
-    let initial_gas = 9999999999999_usize;
+    let initial_gas = 9999999999999_u64;
 
     // Fetch return type data
     let return_type_id = match main_func.signature.ret_types.last() {
@@ -453,7 +453,7 @@ fn load_arguments(
     runner: &mut CairoRunner,
     cairo_run_config: &Cairo1RunConfig,
     main_func: &Function,
-    initial_gas: usize,
+    initial_gas: u64,
 ) -> Result<(), Error> {
     let got_gas_builtin = main_func
         .signature

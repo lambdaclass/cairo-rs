@@ -37,7 +37,7 @@ test_utils = ["std", "dep:arbitrary", "starknet-types-core/arbitrary", "starknet
 extensive_hints = []
 
 [dependencies]
-zip = {version = "0.6.6", optional = true }
+zip = {version = "0.6.6", optional = true, default_features = false, features=["deflate"] }
 num-bigint = { workspace = true }
 rand = { workspace = true }
 num-traits = { workspace = true }
@@ -67,8 +67,6 @@ bitvec = { workspace = true }
 cairo-lang-starknet = { workspace = true, optional = true }
 cairo-lang-starknet-classes = { workspace = true, optional = true }
 cairo-lang-casm = { workspace = true, optional = true }
-
-# TODO: check these dependencies for wasm compatibility
 ark-ff = { workspace = true, optional = true }
 ark-std = { workspace = true, optional = true }
 
