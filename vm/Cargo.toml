@@ -110,3 +110,10 @@ harness = false
 name = "custom_hint"
 path = "../examples/custom_hint/src/main.rs"
 required-features = ["std"]
+
+[package.metadata.cargo-all-features]
+
+# The maximum number of features to try at once. Does not count features from `always_include_features`.
+# This is useful for reducing the number of combinations run for a crate with a large amount of features,
+# since in most cases a bug just needs a small set of 2-3 features to reproduce.
+max_combination_size = 4
