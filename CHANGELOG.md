@@ -2,6 +2,8 @@
 
 #### Upcoming Changes
 
+* fix: Always use a normal segment in first SegmentArena segment [#1845](https://github.com/lambdaclass/cairo-vm/pull/1845)
+
 * chore: bump pip `cairo-lang` 0.13.2 [#1827](https://github.com/lambdaclass/cairo-vm/pull/1827)
 
 * chore: bump `cairo-lang-` dependencies to 2.8.0 [#1833](https://github.com/lambdaclass/cairo-vm/pull/1833/files)
