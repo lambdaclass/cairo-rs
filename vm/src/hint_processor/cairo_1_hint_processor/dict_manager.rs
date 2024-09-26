@@ -120,9 +120,14 @@ impl DictManagerExecScope {
     /// Relocates all dictionaries into a single segment
     /// Does nothing if use_temporary_segments is set to false
     pub fn relocate_all_dictionaries(&mut self, vm: &mut VirtualMachine) -> Result<(), HintError> {
-        if self.use_temporary_segments {
-            let mut prev_end = vm.add_memory_segment();
-            for tracker in &self.trackers {
+        // We expect the first segment to be a normal one, which doesn't require relocation. So
+        // there is nothing to do unless there are at least two segments.
+        if self.use_temporary_segments && self.trackers.len() > 1 {
+            let first_segment = self.trackers.get(0).unwrap();
+            assert!(first_segment.start.segment_index >= 0, "First dict segment should not be temporary");
+            let mut prev_end = first_segment.end.unwrap_or_default();
+            for tracker in &self.trackers[1..] {
+                assert!(tracker.start.segment_index < 0, "Dict segment should be temporary");
                 vm.add_relocation_rule(tracker.start, prev_end)?;
                 prev_end += (tracker.end.unwrap_or_default() - tracker.start)?;
                 prev_end += 1;
