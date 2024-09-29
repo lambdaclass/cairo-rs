@@ -125,12 +125,20 @@ impl DictManagerExecScope {
         if self.use_temporary_segments && self.trackers.len() > 1 {
             let first_segment = self.trackers.get(0).unwrap();
             if first_segment.start.segment_index < 0 {
-                return Err(HintError::CustomHint("First dict segment should not be temporary".to_string().into_boxed_str()));
+                return Err(HintError::CustomHint(
+                    "First dict segment should not be temporary"
+                        .to_string()
+                        .into_boxed_str(),
+                ));
             }
             let mut prev_end = first_segment.end.unwrap_or_default();
             for tracker in &self.trackers[1..] {
                 if tracker.start.segment_index >= 0 {
-                    return Err(HintError::CustomHint("Dict segment should be temporary".to_string().into_boxed_str()));
+                    return Err(HintError::CustomHint(
+                        "Dict segment should be temporary"
+                            .to_string()
+                            .into_boxed_str(),
+                    ));
                 }
                 vm.add_relocation_rule(tracker.start, prev_end)?;
                 prev_end += (tracker.end.unwrap_or_default() - tracker.start)?;
