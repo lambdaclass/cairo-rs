@@ -6,7 +6,6 @@ use crate::types::builtin_name::BuiltinName;
 
 use thiserror_no_std::Error;
 
-use crate::Felt252;
 use crate::{
     types::{
         errors::math_errors::MathError,
@@ -76,12 +75,8 @@ pub enum VirtualMachineError {
     InvalidRes(u64),
     #[error("Invalid opcode value: {0}")]
     InvalidOpcode(u64),
-    #[error("This is not implemented")]
-    NotImplemented,
     #[error("Inconsistent auto-deduction for {}, expected {}, got {:?}", (*.0).0, (*.0).1, (*.0).2)]
     InconsistentAutoDeduction(Box<(BuiltinName, MaybeRelocatable, Option<MaybeRelocatable>)>),
-    #[error("Invalid hint encoding at pc: {0}")]
-    InvalidHintEncoding(Box<MaybeRelocatable>),
     #[error("Expected output builtin to be present")]
     NoOutputBuiltin,
     #[error("Expected range_check builtin to be present")]
@@ -90,14 +85,10 @@ pub enum VirtualMachineError {
     NoSignatureBuiltin,
     #[error("Expected {0} to be present")]
     NoModBuiltin(BuiltinName),
-    #[error("Div out of range: 0 < {} <= {}", (*.0).0, (*.0).1)]
-    OutOfValidRange(Box<(Felt252, Felt252)>),
     #[error("Failed to compare {} and {}, cant compare a relocatable to an integer value", (*.0).0, (*.0).1)]
     DiffTypeComparison(Box<(MaybeRelocatable, MaybeRelocatable)>),
     #[error("Failed to compare {} and  {}, cant compare two relocatable values of different segment indexes", (*.0).0, (*.0).1)]
     DiffIndexComp(Box<(Relocatable, Relocatable)>),
-    #[error("Couldn't convert usize to u32")]
-    NoneInMemoryRange,
     #[error("Expected integer, found: {0:?}")]
     ExpectedIntAtRange(Box<Option<MaybeRelocatable>>),
     #[error("Could not convert slice to array")]
@@ -108,16 +99,10 @@ pub enum VirtualMachineError {
     NoImm,
     #[error("Execution reached the end of the program. Requested remaining steps: {0}.")]
     EndOfProgram(usize),
-    #[error("Could not reach the end of the program. Executed steps: {0}.")]
-    StepsLimit(u64),
     #[error("Could not reach the end of the program. RunResources has no remaining steps.")]
     UnfinishedExecution,
     #[error("Current run is not finished")]
     RunNotFinished,
-    #[error("Invalid argument count, expected {} but got {}", (*.0).0, (*.0).1)]
-    InvalidArgCount(Box<(usize, usize)>),
-    #[error("Couldn't parse prime: {0}")]
-    CouldntParsePrime(Box<str>),
     #[error("{HINT_ERROR_STR}{}", (*.0).1)]
     Hint(Box<(usize, HintError)>),
     #[error("Unexpected Failure")]

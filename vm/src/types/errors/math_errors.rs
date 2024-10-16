@@ -11,14 +11,10 @@ use crate::types::relocatable::{MaybeRelocatable, Relocatable};
 #[derive(Debug, Error, PartialEq)]
 pub enum MathError {
     // Math functions
-    #[error("Can't calculate the square root of negative number: {0})")]
-    SqrtNegative(Box<Felt252>),
     #[error("{} is not divisible by {}", (*.0).0, (*.0).1)]
     SafeDivFail(Box<(Felt252, Felt252)>),
     #[error("{} is not divisible by {}", (*.0).0, (*.0).1)]
     SafeDivFailBigInt(Box<(BigInt, BigInt)>),
-    #[error("{} is not divisible by {}", (*.0).0, (*.0).1)]
-    SafeDivFailBigUint(Box<(BigUint, BigUint)>),
     #[error("{0} is not divisible by {1}")]
     SafeDivFailU32(u32, u32),
     #[error("{} is not divisible by {}", (*.0).0, (*.0).1)]

@@ -28,10 +28,6 @@ pub enum RunnerError {
     MemoryValidationError(MemoryError),
     #[error("Memory loading failed during state initialization: {0}")]
     MemoryInitializationError(MemoryError),
-    #[error("Failed to convert string to FieldElement")]
-    FailedStringConversion,
-    #[error("EcOpBuiltin: m should be at most {0}")]
-    EcOpBuiltinScalarLimit(Box<Felt252>),
     #[error("Given builtins are not in appropiate order")]
     DisorderedBuiltins,
     #[error("Expected integer at address {:?} to be smaller than 2^{}, Got {}", (*.0).0, (*.0).1, (*.0).2)]
@@ -62,28 +58,16 @@ pub enum RunnerError {
     NoProgramStart,
     #[error("Running in proof-mode but no __end__ label found, try compiling with proof-mode")]
     NoProgramEnd,
-    #[error("Could not convert slice to array")]
-    SliceToArrayError,
     #[error("Cannot add the return values to the public memory after segment finalization.")]
     FailedAddingReturnValues,
     #[error("Missing execution public memory")]
     NoExecPublicMemory,
-    #[error("Coulnd't parse prime from felt lib")]
-    CouldntParsePrime,
-    #[error("Could not convert vec with Maybe Relocatables into u64 array")]
-    MaybeRelocVecToU64ArrayError,
-    #[error("Expected Integer value, got Relocatable instead")]
-    FoundNonInt,
     #[error(transparent)]
     Memory(#[from] MemoryError),
     #[error(transparent)]
     Math(#[from] MathError),
-    #[error("keccak_builtin: Failed to get first input address")]
-    KeccakNoFirstInput,
     #[error("{}: Expected integer at address {}", (*.0).0, (*.0).1)]
     BuiltinExpectedInteger(Box<(BuiltinName, Relocatable)>),
-    #[error("keccak_builtin: Failed to convert input cells to u64 values")]
-    KeccakInputCellsNotU64,
     #[error("Unexpected ret_fp_segment size")]
     UnexpectedRetFpSegmentSize,
     #[error("Unexpected ret_pc_segment size")]

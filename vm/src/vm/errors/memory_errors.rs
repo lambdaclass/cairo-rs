@@ -71,14 +71,10 @@ pub enum MemoryError {
     ErrorRetrievingMessage(Box<str>),
     #[error("Error verifying given signature")]
     ErrorVerifyingSignature,
-    #[error("Couldn't obtain a mutable accessed offset")]
-    CantGetMutAccessedOffset,
     #[error("ECDSA builtin: Expected public key at address {0} to be an integer")]
     PubKeyNonInt(Box<Relocatable>),
     #[error("ECDSA builtin: Expected message hash at address {0} to be an integer")]
     MsgNonInt(Box<Relocatable>),
-    #[error("Failed to convert String: {0} to FieldElement")]
-    FailedStringToFieldElementConversion(Box<str>),
     #[error("Failed to fetch {} return values, ap is only {}", (*.0).0, (*.0).1)]
     FailedToGetReturnValues(Box<(usize, Relocatable)>),
     #[error("Segment {} has {} amount of accessed addresses but its size is only {}.", (*.0).0, (*.0).1, (*.0).2)]
