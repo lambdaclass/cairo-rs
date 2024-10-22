@@ -9,7 +9,8 @@ keywords.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cairo-vm = { workspace = true, features = ["std", "cairo-1-hints", "clap"] }
+cairo-vm = {workspace = true, features = ["cairo-1-hints", "clap"]}
+
 serde_json = { workspace = true }
 
 cairo-lang-sierra-type-size = { version = "2.9.0-dev.0", default-features = false }
@@ -23,7 +24,8 @@ cairo-lang-utils.workspace = true
 cairo-lang-casm.workspace = true
 itertools = "0.11.0"
 clap = { version = "4.3.10", features = ["derive"] }
-thiserror = { version = "1.0.40" }
+thiserror = { version = "1.0.40", optional = true }
+thiserror-no-std = { workspace = true }
 bincode.workspace = true
 assert_matches = "1.5.0"
 rstest = "0.17.0"
@@ -34,3 +36,9 @@ num-bigint.workspace = true
 [features]
 default = ["with_mimalloc"]
 with_mimalloc = ["dep:mimalloc"]
+cli = ["dep:thiserror", "cairo-vm/std"]
+
+[[bin]]
+name = "cairo1-run"
+path = "./src/main.rs"
+required-features = ["cli"]

@@ -715,7 +715,24 @@ jobs:
         cairo-compile cairo_programs/array_sum.cairo --no_debug_info --output cairo_programs/array_sum.json
         cd examples/wasm-demo
         wasm-pack build --target=web
-        
+  
+  wasm-demo-cairo1:
+    name: Build the wasm demo cairo1
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+      
+    - name: Install cairo-lang and deps
+      run: |
+        npm install -g wasm-pack
+    - name: Build wasm-demo-cairo1
+      run: |
+        cd examples/wasm-demo-cairo1
+        wasm-pack build --target=web
+  
   compare-factorial-outputs-all-layouts:
     name: Compare factorial outputs for all layouts
     needs: [ build-programs, build-release ]
@@ -844,4 +861,3 @@ jobs:
    
     - name: Run comparison
       run: ./vm/src/tests/compare_all_pie_outputs.sh
-

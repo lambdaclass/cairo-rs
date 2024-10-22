@@ -1,0 +1,33 @@
+[package]
+name = "wasm-demo-cairo1"
+description = "A demo using cairo-vm in a WASM environment"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["console_error_panic_hook"]
+
+[dependencies]
+serde_json.workspace = true
+wasm-bindgen = "0.2.87"
+cairo-lang-sierra = { workspace = true }
+
+# The `console_error_panic_hook` crate provides better debugging of panics by
+# logging them with `console.error`. This is great for development, but requires
+# all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
+# code size when deploying.
+console_error_panic_hook = { version = "0.1.6", optional = true }
+
+cairo-vm = { workspace = true }
+cairo1-run = { workspace = true }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.34"

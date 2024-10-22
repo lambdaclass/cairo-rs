@@ -7,7 +7,7 @@ Once you are inside the `./cairo1-run` folder, use the CLI with the following co
 To install the required dependencies(cairo corelib) run
 
 ```bash
-make deps 
+make deps
 ```
 
 Now that you have the dependencies necessary to run the tests, you can run:
@@ -16,18 +16,17 @@ Now that you have the dependencies necessary to run the tests, you can run:
 make test
 ```
 
-To execute a Cairo 1 program (either as Cairo 1 source file or Sierra)
+To execute a Cairo 1 program (either as Cairo 1 source file or Sierra). Make sure the `cli` feature is active in order to use `cairo1-run` as a binary.
 
 ```bash
-cargo run ../cairo_programs/cairo-1-programs/fibonacci.cairo 
+cargo run --features cli ../cairo_programs/cairo-1-programs/fibonacci.cairo
 ```
 
 Arguments to generate the trace and memory files
 
 ```bash
-cargo run ../cairo_programs/cairo-1-programs/fibonacci.cairo --trace_file ../cairo_programs/cairo-1-programs/fibonacci.trace --memory_file ../cairo_programs/cairo-1-programs/fibonacci.memory
+cargo run --features cli ../cairo_programs/cairo-1-programs/fibonacci.cairo --trace_file ../cairo_programs/cairo-1-programs/fibonacci.trace --memory_file ../cairo_programs/cairo-1-programs/fibonacci.memory
 ```
-
 To pass arguments to `main`
 
 * Separate arguments with a whitespace inbetween
@@ -37,14 +36,14 @@ Example:
 
 ```bash
 
-cargo run ../cairo_programs/cairo-1-programs/with_input/array_input_sum.cairo --layout all_cairo --args '2 [1 2 3 4] 0 [9 8]'
+cargo run --features cli ../cairo_programs/cairo-1-programs/with_input/array_input_sum.cairo --layout all_cairo --args '2 [1 2 3 4] 0 [9 8]'
 
 ```
 
 To execute all the cairo 1 programs inside `../cairo_programs/cairo-1-programs/` and generate the corresponding trace and the memory files
 
 ```bash
-make run 
+make run
 ```
 
 ## CLI argument list
@@ -86,7 +85,7 @@ Then run the compiled project's sierra file located at `project_name/target/proj
 
 Example:
 ```bash
-  cargo run path-to-project/target/project_name.sierra.json 
+  cargo run --features cli path-to-project/target/project_name.sierra.json
 ```
 
 # Known bugs & issues

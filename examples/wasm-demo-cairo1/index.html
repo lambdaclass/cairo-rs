@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <title>Cairo WebAssembly Demo</title>
+
+        <script type="module">
+            import init, { runCairoProgram } from "./pkg/wasm_demo_cairo1.js";
+
+            // Initialize WebAssembly module.
+            // Note: This calls the `start()` function automatically.
+            await init();
+
+            // Run cairo-rs through our proxy function.
+            const value = await runCairoProgram();
+
+            // Display the result.
+            document.getElementById("result").innerHTML += value;
+        </script>
+    </head>
+
+    <body>
+        <p id="result">Result:</p>
+    </body>
+</html>

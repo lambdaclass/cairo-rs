@@ -10,12 +10,16 @@ use cairo_vm::{
     },
     Felt252,
 };
+#[cfg(feature = "cli")]
 use thiserror::Error;
+#[cfg(not(feature = "cli"))]
+use thiserror_no_std::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Invalid arguments")]
     Cli(#[from] clap::Error),
+    #[cfg(feature = "cli")]
     #[error("Failed to interact with the file system")]
     IO(#[from] std::io::Error),
     #[error(transparent)]

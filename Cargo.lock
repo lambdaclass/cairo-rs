@@ -997,6 +997,7 @@ dependencies = [
  "rstest",
  "serde_json",
  "thiserror",
+ "thiserror-no-std",
 ]
 
 [[package]]
@@ -3614,6 +3615,19 @@ name = "wasm-demo"
 version = "1.0.1"
 dependencies = [
  "cairo-vm",
+ "console_error_panic_hook",
+ "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-test",
+]
+
+[[package]]
+name = "wasm-demo-cairo1"
+version = "1.0.1"
+dependencies = [
+ "cairo-lang-sierra",
+ "cairo-vm",
+ "cairo1-run",
  "console_error_panic_hook",
  "serde_json",
  "wasm-bindgen",
