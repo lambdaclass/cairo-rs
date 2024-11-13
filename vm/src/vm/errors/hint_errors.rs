@@ -45,7 +45,7 @@ pub enum HintError {
     #[error("Hint Error: {0}")]
     CustomHint(Box<str>),
     #[error("Missing constant: {0}")]
-    MissingConstant(Box<&'static str>),
+    MissingConstant(Box<str>),
     #[error("Fail to get constants for hint execution")]
     FailedToGetConstant,
     #[error("Arc too big, {} must be <= {} and {} <= {}", (*.0).0, (*.0).1, (*.0).2, (*.0).3)]

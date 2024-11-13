@@ -92,7 +92,7 @@ pub fn compare_bytes_in_word_nondet(
     // Felt252::from(BYTES_INTO_WORD) into a lazy_static!
     let bytes_in_word = constants
         .get(BYTES_IN_WORD)
-        .ok_or_else(|| HintError::MissingConstant(Box::new(BYTES_IN_WORD)))?;
+        .ok_or_else(|| HintError::MissingConstant(BYTES_IN_WORD.to_string().into_boxed_str()))?;
     let value = Felt252::from((n_bytes < bytes_in_word) as usize);
     insert_value_into_ap(vm, value)
 }
@@ -117,7 +117,9 @@ pub fn compare_keccak_full_rate_in_bytes_nondet(
     let keccak_full_rate_in_bytes = constants
         .get(KECCAK_FULL_RATE_IN_BYTES_CAIRO_KECCAK)
         .or_else(|| constants.get(KECCAK_FULL_RATE_IN_BYTES_BUILTIN_KECCAK))
-        .ok_or_else(|| HintError::MissingConstant(Box::new(KECCAK_FULL_RATE_IN_BYTES)))?;
+        .ok_or_else(|| {
+            HintError::MissingConstant(KECCAK_FULL_RATE_IN_BYTES.to_string().into_boxed_str())
+        })?;
     let value = Felt252::from((n_bytes >= keccak_full_rate_in_bytes) as usize);
     insert_value_into_ap(vm, value)
 }
@@ -149,9 +151,9 @@ pub(crate) fn block_permutation_v1(
     ap_tracking: &ApTracking,
     constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let keccak_state_size_felts = constants
-        .get(KECCAK_STATE_SIZE_FELTS)
-        .ok_or_else(|| HintError::MissingConstant(Box::new(KECCAK_STATE_SIZE_FELTS)))?;
+    let keccak_state_size_felts = constants.get(KECCAK_STATE_SIZE_FELTS).ok_or_else(|| {
+        HintError::MissingConstant(KECCAK_STATE_SIZE_FELTS.to_string().into_boxed_str())
+    })?;
     if keccak_state_size_felts >= &Felt252::from(100_i32) {
         return Err(HintError::InvalidKeccakStateSizeFelt252s(Box::new(
             *keccak_state_size_felts,
@@ -216,9 +218,9 @@ pub(crate) fn block_permutation_v2(
     ap_tracking: &ApTracking,
     constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let keccak_state_size_felts = constants
-        .get(KECCAK_STATE_SIZE_FELTS)
-        .ok_or_else(|| HintError::MissingConstant(Box::new(KECCAK_STATE_SIZE_FELTS)))?;
+    let keccak_state_size_felts = constants.get(KECCAK_STATE_SIZE_FELTS).ok_or_else(|| {
+        HintError::MissingConstant(KECCAK_STATE_SIZE_FELTS.to_string().into_boxed_str())
+    })?;
     if keccak_state_size_felts >= &Felt252::from(100_i32) {
         return Err(HintError::InvalidKeccakStateSizeFelt252s(Box::new(
             *keccak_state_size_felts,
@@ -253,12 +255,12 @@ fn cairo_keccak_finalize(
     constants: &HashMap<String, Felt252>,
     block_size_limit: usize,
 ) -> Result<(), HintError> {
-    let keccak_state_size_felts = constants
-        .get(KECCAK_STATE_SIZE_FELTS)
-        .ok_or_else(|| HintError::MissingConstant(Box::new(KECCAK_STATE_SIZE_FELTS)))?;
+    let keccak_state_size_felts = constants.get(KECCAK_STATE_SIZE_FELTS).ok_or_else(|| {
+        HintError::MissingConstant(KECCAK_STATE_SIZE_FELTS.to_string().into_boxed_str())
+    })?;
     let block_size = constants
         .get(BLOCK_SIZE)
-        .ok_or_else(|| HintError::MissingConstant(Box::new(BLOCK_SIZE)))?;
+        .ok_or_else(|| HintError::MissingConstant(BLOCK_SIZE.to_string().into_boxed_str()))?;
 
     if keccak_state_size_felts >= &Felt252::from(100_i32) {
         return Err(HintError::InvalidKeccakStateSizeFelt252s(Box::new(

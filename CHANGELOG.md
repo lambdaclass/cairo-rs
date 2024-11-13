@@ -184,6 +184,8 @@
     * `verify_secure_runner`
   * [hooks feature] `BeforeFirstStepHookFunc` dyn Fn no longer takes a mutable reference to `CairoRunner`, along with `VirtualMachine::execute_before_first_step`.
 
+* refactor: remove static lifetime for name str parameter requirement for constant getter
+
 * fix: add support for arrays shorter than 2 as arguments for cairo1-run [#1737](https://github.com/lambdaclass/cairo-vm/pull/1737)
 
 * bugfix: Fix BuiltinRunner::final_stack for SegmentArena[#1747](https://github.com/lambdaclass/cairo-vm/pull/1747)

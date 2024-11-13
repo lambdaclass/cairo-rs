@@ -542,7 +542,7 @@ mod tests {
         //Execute the hint
         assert_matches!(
             run_hint!(vm, ids_data, hint_code::ADD_NO_UINT384_CHECK),
-            Err(HintError::MissingConstant(bx)) if *bx == "SHIFT"
+            Err(HintError::MissingConstant(bx)) if &*bx == "SHIFT"
         );
     }
 

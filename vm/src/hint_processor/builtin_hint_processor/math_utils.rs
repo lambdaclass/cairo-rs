@@ -581,7 +581,7 @@ pub fn is_addr_bounded(
 ) -> Result<(), HintError> {
     let addr = get_integer_from_var_name("addr", vm, ids_data, ap_tracking)?;
 
-    let addr_bound = constants
+   let addr_bound = constants
         .get(ADDR_BOUND)
         .ok_or_else(|| HintError::MissingConstant(Box::new(ADDR_BOUND)))?
         .to_biguint();
@@ -2033,7 +2033,7 @@ mod tests {
         //Execute the hint
         assert_matches!(
             run_hint!(vm, ids_data, hint_code),
-            Err(HintError::MissingConstant(bx)) if *bx == ADDR_BOUND
+            Err(HintError::MissingConstant(bx)) if &*bx == ADDR_BOUND
         );
     }
 
@@ -2257,7 +2257,7 @@ mod tests {
         //Execute the hint
         assert_matches!(
             run_hint!(vm, ids_data, hint_code),
-            Err(HintError::MissingConstant(x)) if (*x) == "MAX_HIGH"
+            Err(HintError::MissingConstant(x)) if &*x == "MAX_HIGH"
         );
     }
 
