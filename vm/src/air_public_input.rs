@@ -66,6 +66,7 @@ mod mem_value_serde {
         where
             E: de::Error,
         {
+            let value = value.strip_prefix("0x").unwrap_or(value);
             Felt252::from_hex(value)
                 .map_err(de::Error::custom)
                 .map(Some)
