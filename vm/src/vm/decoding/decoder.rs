@@ -1,15 +1,15 @@
-use crate::{
-    types::instruction::{
-        ApUpdate, FpUpdate, Instruction, Op1Addr, Opcode, PcUpdate, Register, Res,
-    },
-    vm::errors::vm_errors::VirtualMachineError,
-};
+use crate::{types::instruction::Instruction, vm::errors::vm_errors::VirtualMachineError};
 
 //  0|  opcode|ap_update|pc_update|res_logic|op1_src|op0_reg|dst_reg
 // 15|14 13 12|    11 10|  9  8  7|     6  5|4  3  2|      1|      0
 
 /// Decodes an instruction. The encoding is little endian, so flags go from bit 63 to 48.
 pub fn decode_instruction(encoded_instr: u64) -> Result<Instruction, VirtualMachineError> {
+    // FIXME: replace the function and use the extended decoding for error when relevant
+    encoded_instr
+        .try_into()
+        .map_err(|_| VirtualMachineError::InstructionNonZeroHighBit)
+    /*
     const HIGH_BIT: u64 = 1u64 << 63;
     const DST_REG_MASK: u64 = 0x0001;
     const DST_REG_OFF: u64 = 0;
@@ -125,9 +125,10 @@ pub fn decode_instruction(encoded_instr: u64) -> Result<Instruction, VirtualMach
         fp_update,
         opcode,
     })
+    */
 }
 
-fn decode_offset(offset: u64) -> isize {
+pub(crate) fn decode_offset(offset: u64) -> isize {
     let vectorized_offset: [u8; 8] = offset.to_le_bytes();
     let offset_16b_encoded = u16::from_le_bytes([vectorized_offset[0], vectorized_offset[1]]);
     let complement_const = 0x8000u16;

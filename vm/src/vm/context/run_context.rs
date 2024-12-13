@@ -32,43 +32,46 @@ impl RunContext {
 
     pub fn compute_dst_addr(
         &self,
-        instruction: &Instruction,
+        instruction: Instruction,
     ) -> Result<Relocatable, VirtualMachineError> {
-        let base_addr = match instruction.dst_register {
+        let base_addr = match instruction.dst_register() {
             Register::AP => self.get_ap(),
             Register::FP => self.get_fp(),
         };
-        if instruction.off0 < 0 {
-            Ok((base_addr - abs(instruction.off0) as usize)?)
+        let off0 = instruction.offset0();
+        if off0 < 0 {
+            Ok((base_addr - abs(off0) as usize)?)
         } else {
-            Ok((base_addr + (instruction.off0 as usize))?)
+            Ok((base_addr + (off0 as usize))?)
         }
     }
 
     pub fn compute_op0_addr(
         &self,
-        instruction: &Instruction,
+        instruction: Instruction,
     ) -> Result<Relocatable, VirtualMachineError> {
-        let base_addr = match instruction.op0_register {
+        let base_addr = match instruction.op0_register() {
             Register::AP => self.get_ap(),
             Register::FP => self.get_fp(),
         };
-        if instruction.off1 < 0 {
-            Ok((base_addr - abs(instruction.off1) as usize)?)
+        let off1 = instruction.offset1();
+        if off1 < 0 {
+            Ok((base_addr - abs(off1) as usize)?)
         } else {
-            Ok((base_addr + (instruction.off1 as usize))?)
+            Ok((base_addr + (off1 as usize))?)
         }
     }
 
     pub fn compute_op1_addr(
         &self,
-        instruction: &Instruction,
+        instruction: Instruction,
         op0: Option<&MaybeRelocatable>,
     ) -> Result<Relocatable, VirtualMachineError> {
-        let base_addr = match instruction.op1_addr {
+        let off2 = instruction.offset2();
+        let base_addr = match instruction.op1_addr() {
             Op1Addr::FP => self.get_fp(),
             Op1Addr::AP => self.get_ap(),
-            Op1Addr::Imm => match instruction.off2 == 1 {
+            Op1Addr::Imm => match off2 == 1 {
                 true => self.pc,
                 false => return Err(VirtualMachineError::ImmShouldBe1),
             },
@@ -78,10 +81,10 @@ impl RunContext {
                 None => return Err(VirtualMachineError::UnknownOp0),
             },
         };
-        if instruction.off2 < 0 {
-            Ok((base_addr - abs(instruction.off2) as usize)?)
+        if off2 < 0 {
+            Ok((base_addr - abs(off2) as usize)?)
         } else {
-            Ok((base_addr + (instruction.off2 as usize))?)
+            Ok((base_addr + (off2 as usize))?)
         }
     }
 
