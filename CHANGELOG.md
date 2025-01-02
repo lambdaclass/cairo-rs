@@ -10,6 +10,8 @@
 
 #### [2.0.0-rc2] - 2024-12-12
 
+* chore: Expose fields in `AirPrivateInputSerializable` as public for external access [#1900] (https://github.com/lambdaclass/cairo-vm/pull/1900)
+
 * fix: Change wildcard getrandom dependency.
 
 * Update starknet-crypto to 0.7.3, removing the old FieldElement completly in favour of the new Felt (that is Copy).

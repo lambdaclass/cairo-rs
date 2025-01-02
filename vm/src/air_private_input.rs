@@ -12,28 +12,28 @@ use crate::Felt252;
 // Serializable format, matches the file output of the python implementation
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct AirPrivateInputSerializable {
-    trace_path: String,
-    memory_path: String,
+    pub trace_path: String,
+    pub memory_path: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pedersen: Option<Vec<PrivateInput>>,
+    pub pedersen: Option<Vec<PrivateInput>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    range_check: Option<Vec<PrivateInput>>,
+    pub range_check: Option<Vec<PrivateInput>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    range_check96: Option<Vec<PrivateInput>>,
+    pub range_check96: Option<Vec<PrivateInput>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    ecdsa: Option<Vec<PrivateInput>>,
+    pub ecdsa: Option<Vec<PrivateInput>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    bitwise: Option<Vec<PrivateInput>>,
+    pub bitwise: Option<Vec<PrivateInput>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    ec_op: Option<Vec<PrivateInput>>,
+    pub ec_op: Option<Vec<PrivateInput>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    keccak: Option<Vec<PrivateInput>>,
+    pub keccak: Option<Vec<PrivateInput>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    poseidon: Option<Vec<PrivateInput>>,
+    pub poseidon: Option<Vec<PrivateInput>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    add_mod: Option<PrivateInput>,
+    pub add_mod: Option<PrivateInput>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    mul_mod: Option<PrivateInput>,
+    pub mul_mod: Option<PrivateInput>,
 }
 
 // Contains only builtin public inputs, useful for library users
