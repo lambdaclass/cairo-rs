@@ -202,7 +202,7 @@ pub type HintRange = (usize, NonZeroUsize);
 pub struct Program {
     pub shared_program_data: Arc<SharedProgramData>,
     pub constants: HashMap<String, Felt252>,
-    pub(crate) builtins: Vec<BuiltinName>,
+    pub builtins: Vec<BuiltinName>,
 }
 
 impl Program {
