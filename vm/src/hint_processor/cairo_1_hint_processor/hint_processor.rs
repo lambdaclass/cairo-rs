@@ -469,10 +469,10 @@ impl Cairo1HintProcessor {
         remainder1: &CellRef,
     ) -> Result<(), HintError> {
         let pow_2_128 = BigUint::from(u128::MAX) + 1u32;
-        let dividend0 = get_val(vm, dividend0)?.to_biguint();
-        let dividend1 = get_val(vm, dividend1)?.to_biguint();
-        let divisor0 = get_val(vm, divisor0)?.to_biguint();
-        let divisor1 = get_val(vm, divisor1)?.to_biguint();
+        let dividend0 = res_operand_get_val(vm, dividend0)?.to_biguint();
+        let dividend1 = res_operand_get_val(vm, dividend1)?.to_biguint();
+        let divisor0 = res_operand_get_val(vm, divisor0)?.to_biguint();
+        let divisor1 = res_operand_get_val(vm, divisor1)?.to_biguint();
         let dividend: BigUint = dividend0 + dividend1.shl(128);
         let divisor = divisor0 + divisor1.shl(128);
         let (quotient, remainder) = dividend.div_rem(&divisor);
@@ -1150,10 +1150,10 @@ impl Cairo1HintProcessor {
         t_or_k1: &CellRef,
     ) -> Result<(), HintError> {
         let pow_2_128 = BigInt::from(u128::MAX) + 1u32;
-        let b0 = get_val(vm, b0)?.to_bigint();
-        let b1 = get_val(vm, b1)?.to_bigint();
-        let n0 = get_val(vm, n0)?.to_bigint();
-        let n1 = get_val(vm, n1)?.to_bigint();
+        let b0 = res_operand_get_val(vm, b0)?.to_bigint();
+        let b1 = res_operand_get_val(vm, b1)?.to_bigint();
+        let n0 = res_operand_get_val(vm, n0)?.to_bigint();
+        let n1 = res_operand_get_val(vm, n1)?.to_bigint();
         let b: BigInt = b0.clone() + b1.clone().shl(128);
         let n: BigInt = n0 + n1.shl(128);
         let ExtendedGcd {

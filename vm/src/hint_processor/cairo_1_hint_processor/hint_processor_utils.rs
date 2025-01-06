@@ -40,31 +40,6 @@ pub(crate) fn get_mayberelocatable(
     })
 }
 
-/// Fetches the value of `res_operand` from the vm.
-pub(crate) fn get_val(
-    vm: &VirtualMachine,
-    res_operand: &ResOperand,
-) -> Result<Felt252, VirtualMachineError> {
-    match res_operand {
-        ResOperand::Deref(cell) => get_cell_val(vm, cell),
-        ResOperand::DoubleDeref(cell, offset) => {
-            get_double_deref_val(vm, cell, &Felt252::from(*offset as i32))
-        }
-        ResOperand::Immediate(x) => Ok(Felt252::from(&x.value)),
-        ResOperand::BinOp(op) => {
-            let a = get_cell_val(vm, &op.a)?;
-            let b = match &op.b {
-                DerefOrImmediate::Deref(cell) => get_cell_val(vm, cell)?,
-                DerefOrImmediate::Immediate(x) => Felt252::from(&x.value),
-            };
-            match op.op {
-                Operation::Add => Ok(a + b),
-                Operation::Mul => Ok(a * b),
-            }
-        }
-    }
-}
-
 pub(crate) fn cell_ref_to_relocatable(
     cell_ref: &CellRef,
     vm: &VirtualMachine,
