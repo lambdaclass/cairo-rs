@@ -1,13 +1,14 @@
 use crate::{
     air_private_input::AirPrivateInput,
     air_public_input::{PublicInput, PublicInputError},
+    math_utils::safe_div_usize,
     stdlib::{
         any::Any,
         collections::{HashMap, HashSet},
         ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
         prelude::*,
     },
-    types::{builtin_name::BuiltinName, layout::MEMORY_UNITS_PER_STEP, layout_name::LayoutName},
+    types::{builtin_name::BuiltinName, layout::CairoLayoutParams, layout_name::LayoutName},
     vm::{
         runners::builtin_runner::SegmentArenaBuiltinRunner,
         trace::trace_entry::{relocate_trace_register, RelocatedTraceEntry},
@@ -17,7 +18,6 @@ use crate::{
 
 use crate::{
     hint_processor::hint_processor_definition::{HintProcessor, HintReference},
-    math_utils::safe_div_usize,
     types::{
         errors::{math_errors::MathError, program_errors::ProgramError},
         exec_scope::ExecutionScopes,
@@ -168,9 +168,12 @@ pub enum RunnerMode {
 }
 
 impl CairoRunner {
+    /// The `dynamic_layout_params` argument should only be used with dynamic layout.
+    /// It is ignored otherwise.
     pub fn new_v2(
         program: &Program,
         layout: LayoutName,
+        dynamic_layout_params: Option<CairoLayoutParams>,
         mode: RunnerMode,
         trace_enabled: bool,
     ) -> Result<CairoRunner, RunnerError> {
@@ -185,7 +188,12 @@ impl CairoRunner {
             LayoutName::recursive_with_poseidon => CairoLayout::recursive_with_poseidon(),
             LayoutName::all_cairo => CairoLayout::all_cairo_instance(),
             LayoutName::all_solidity => CairoLayout::all_solidity_instance(),
-            LayoutName::dynamic => CairoLayout::dynamic_instance(),
+            LayoutName::dynamic => {
+                let params =
+                    dynamic_layout_params.ok_or(RunnerError::MissingDynamicLayoutParams)?;
+
+                CairoLayout::dynamic_instance(params)
+            }
         };
         Ok(CairoRunner {
             program: program.clone(),
@@ -215,6 +223,7 @@ impl CairoRunner {
     pub fn new(
         program: &Program,
         layout: LayoutName,
+        dynamic_layout_params: Option<CairoLayoutParams>,
         proof_mode: bool,
         trace_enabled: bool,
     ) -> Result<CairoRunner, RunnerError> {
@@ -222,11 +231,18 @@ impl CairoRunner {
             Self::new_v2(
                 program,
                 layout,
+                dynamic_layout_params,
                 RunnerMode::ProofModeCanonical,
                 trace_enabled,
             )
         } else {
-            Self::new_v2(program, layout, RunnerMode::ExecutionMode, trace_enabled)
+            Self::new_v2(
+                program,
+                layout,
+                dynamic_layout_params,
+                RunnerMode::ExecutionMode,
+                trace_enabled,
+            )
         }
     }
 
@@ -288,7 +304,7 @@ impl CairoRunner {
             let included = program_builtins.remove(&BuiltinName::range_check);
             if included || self.is_proof_mode() {
                 self.vm.builtin_runners.push(
-                    RangeCheckBuiltinRunner::<RC_N_PARTS_STANDARD>::new(
+                    RangeCheckBuiltinRunner::<RC_N_PARTS_STANDARD>::new_with_low_ratio(
                         instance_def.ratio,
                         included,
                     )
@@ -346,8 +362,11 @@ impl CairoRunner {
             let included = program_builtins.remove(&BuiltinName::range_check96);
             if included || self.is_proof_mode() {
                 self.vm.builtin_runners.push(
-                    RangeCheckBuiltinRunner::<RC_N_PARTS_96>::new(instance_def.ratio, included)
-                        .into(),
+                    RangeCheckBuiltinRunner::<RC_N_PARTS_96>::new_with_low_ratio(
+                        instance_def.ratio,
+                        included,
+                    )
+                    .into(),
                 );
             }
         }
@@ -822,14 +841,20 @@ impl CairoRunner {
                 diluted_pool_instance.n_bits,
             );
 
-            let multiplier = safe_div_usize(
-                self.vm.current_step,
-                builtin_runner.ratio().unwrap_or(1) as usize,
-            )?;
+            let multiplier = builtin_runner.get_allocated_instances(&self.vm)?;
+
             used_units_by_builtins += used_units * multiplier;
         }
 
-        let diluted_units = diluted_pool_instance.units_per_step as usize * self.vm.current_step;
+        let diluted_units = if !diluted_pool_instance.fractional_units_per_step {
+            diluted_pool_instance.units_per_step as usize * self.vm.current_step
+        } else {
+            safe_div_usize(
+                self.vm.current_step,
+                diluted_pool_instance.units_per_step as usize,
+            )?
+        };
+
         let unused_diluted_units = diluted_units.saturating_sub(used_units_by_builtins);
 
         let diluted_usage_upper_bound = 1usize << diluted_pool_instance.n_bits;
@@ -1157,7 +1182,7 @@ impl CairoRunner {
 
         // Out of the memory units available per step, a fraction is used for public memory, and
         // four are used for the instruction.
-        let total_memory_units = MEMORY_UNITS_PER_STEP * vm_current_step_u32;
+        let total_memory_units = instance.memory_units_per_step * vm_current_step_u32;
         let (public_memory_units, rem) =
             div_rem(total_memory_units, instance.public_memory_fraction);
         if rem != 0 {
@@ -4464,6 +4489,7 @@ mod tests {
                     full_name: None,
                     members: None,
                     cairo_type: None,
+                    size: None,
                 },
             )]
             .into_iter()
@@ -4492,6 +4518,7 @@ mod tests {
                         full_name: None,
                         members: None,
                         cairo_type: None,
+                        size: None,
                     },
                 ),
                 (
@@ -4503,6 +4530,7 @@ mod tests {
                         full_name: None,
                         members: None,
                         cairo_type: None,
+                        size: None,
                     },
                 ),
             ]
@@ -4532,6 +4560,7 @@ mod tests {
                     full_name: None,
                     members: None,
                     cairo_type: None,
+                    size: None,
                 },
             )]
             .into_iter()

@@ -125,7 +125,17 @@ fn inner_dereference(input: &str) -> IResult<&str, OffsetValue> {
     if input.is_empty() {
         return Ok(("", OffsetValue::Value(0)));
     }
-    let (input, _sign) = opt(alt((tag(" + "), tag(" - "))))(input)?;
+    let (input, sign) = opt(alt((tag(" + "), tag(" - "))))(input)?;
+
+    let is_positive = match sign {
+        Some(s) => match s.trim() {
+            "+" => true,
+            "-" => false,
+            // can't happen since the alt parser only takes "+" or "-"
+            _ => unreachable!(),
+        },
+        None => true,
+    };
 
     map_res(
         delimited(tag("["), take_until("]"), tag("]")),
@@ -135,7 +145,7 @@ fn inner_dereference(input: &str) -> IResult<&str, OffsetValue> {
         let (_, (register, offset)) = res;
         let offset_value = match register {
             None => OffsetValue::Value(offset),
-            Some(reg) => OffsetValue::Reference(reg, offset, true),
+            Some(reg) => OffsetValue::Reference(reg, offset, true, is_positive),
         };
         (rem_input, offset_value)
     })
@@ -145,7 +155,7 @@ fn no_inner_dereference(input: &str) -> IResult<&str, OffsetValue> {
     let (rem_input, (register, offset)) = register_and_offset(input)?;
     let offset_value = match register {
         None => OffsetValue::Value(offset),
-        Some(reg) => OffsetValue::Reference(reg, offset, false),
+        Some(reg) => OffsetValue::Reference(reg, offset, false, true),
     };
     Ok((rem_input, offset_value))
 }
@@ -177,13 +187,17 @@ pub(crate) fn parse_value(input: &str) -> IResult<&str, ValueAddress> {
         let offset1 = match fst_offset {
             OffsetValue::Immediate(imm) => OffsetValue::Immediate(imm),
             OffsetValue::Value(val) => OffsetValue::Immediate(Felt252::from(val)),
-            OffsetValue::Reference(reg, val, refe) => OffsetValue::Reference(reg, val, refe),
+            OffsetValue::Reference(reg, val, refe, is_positive) => {
+                OffsetValue::Reference(reg, val, refe, is_positive)
+            }
         };
 
         let offset2 = match snd_offset {
             OffsetValue::Immediate(imm) => OffsetValue::Immediate(imm),
             OffsetValue::Value(val) => OffsetValue::Immediate(Felt252::from(val)),
-            OffsetValue::Reference(reg, val, refe) => OffsetValue::Reference(reg, val, refe),
+            OffsetValue::Reference(reg, val, refe, is_positive) => {
+                OffsetValue::Reference(reg, val, refe, is_positive)
+            }
         };
 
         (offset1, offset2)
@@ -368,7 +382,10 @@ mod tests {
 
         assert_eq!(
             parsed,
-            Ok((" + 2", OffsetValue::Reference(Register::FP, -1_i32, true)))
+            Ok((
+                " + 2",
+                OffsetValue::Reference(Register::FP, -1_i32, true, true)
+            ))
         );
     }
 
@@ -380,7 +397,7 @@ mod tests {
 
         assert_eq!(
             parsed,
-            Ok(("", OffsetValue::Reference(Register::AP, 3_i32, false)))
+            Ok(("", OffsetValue::Reference(Register::AP, 3_i32, false, true)))
         );
     }
 
@@ -396,13 +413,34 @@ mod tests {
                 "",
                 ValueAddress {
                     offset2: OffsetValue::Value(2),
-                    offset1: OffsetValue::Reference(Register::FP, -1_i32, true),
+                    offset1: OffsetValue::Reference(Register::FP, -1_i32, true, true),
                     outer_dereference: true,
                     inner_dereference: false,
                     value_type: "felt".to_string(),
                 }
             ))
         );
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn parse_value_with_neg_inner_dereference_test() {
+        let value = "cast(17 - [fp], felt)";
+        let parsed = parse_value(value).unwrap();
+
+        assert_eq!(
+            parsed,
+            (
+                "",
+                ValueAddress {
+                    offset1: OffsetValue::Immediate(Felt252::from(17)),
+                    offset2: OffsetValue::Reference(Register::FP, 0_i32, true, false),
+                    outer_dereference: false,
+                    inner_dereference: false,
+                    value_type: "felt".to_string()
+                }
+            )
+        )
     }
 
     #[test]
@@ -416,7 +454,7 @@ mod tests {
             Ok((
                 "",
                 ValueAddress {
-                    offset1: OffsetValue::Reference(Register::AP, 2_i32, false),
+                    offset1: OffsetValue::Reference(Register::AP, 2_i32, false, true),
                     offset2: OffsetValue::Value(0),
                     outer_dereference: false,
                     inner_dereference: false,
@@ -457,7 +495,7 @@ mod tests {
             Ok((
                 "",
                 ValueAddress {
-                    offset1: OffsetValue::Reference(Register::AP, 0_i32, false),
+                    offset1: OffsetValue::Reference(Register::AP, 0_i32, false, true),
                     offset2: OffsetValue::Value(-1),
                     outer_dereference: true,
                     inner_dereference: false,
@@ -478,7 +516,7 @@ mod tests {
             Ok((
                 "",
                 ValueAddress {
-                    offset1: OffsetValue::Reference(Register::AP, 0_i32, true),
+                    offset1: OffsetValue::Reference(Register::AP, 0_i32, true, true),
                     offset2: OffsetValue::Value(1),
                     outer_dereference: true,
                     inner_dereference: false,
@@ -499,7 +537,7 @@ mod tests {
             Ok((
                 "",
                 ValueAddress {
-                    offset1: OffsetValue::Reference(Register::AP, 0_i32, true),
+                    offset1: OffsetValue::Reference(Register::AP, 0_i32, true, true),
                     offset2: OffsetValue::Immediate(Felt252::ONE),
                     outer_dereference: true,
                     inner_dereference: false,
@@ -520,7 +558,7 @@ mod tests {
             Ok((
                 "",
                 ValueAddress {
-                    offset1: OffsetValue::Reference(Register::AP, 1_i32, true),
+                    offset1: OffsetValue::Reference(Register::AP, 1_i32, true, true),
                     offset2: OffsetValue::Value(1),
                     outer_dereference: true,
                     inner_dereference: false,
@@ -541,8 +579,8 @@ mod tests {
             Ok((
                 "",
                 ValueAddress {
-                    offset1: OffsetValue::Reference(Register::AP, 0_i32, true),
-                    offset2: OffsetValue::Reference(Register::FP, 1_i32, true),
+                    offset1: OffsetValue::Reference(Register::AP, 0_i32, true, true),
+                    offset2: OffsetValue::Reference(Register::FP, 1_i32, true, true),
                     outer_dereference: true,
                     inner_dereference: false,
                     value_type: "__main__.felt".to_string(),
@@ -562,8 +600,8 @@ mod tests {
             Ok((
                 "",
                 ValueAddress {
-                    offset1: OffsetValue::Reference(Register::AP, 1_i32, true),
-                    offset2: OffsetValue::Reference(Register::FP, 1_i32, true),
+                    offset1: OffsetValue::Reference(Register::AP, 1_i32, true, true),
+                    offset2: OffsetValue::Reference(Register::FP, 1_i32, true, true),
                     outer_dereference: true,
                     inner_dereference: false,
                     value_type: "__main__.felt".to_string(),
@@ -604,7 +642,7 @@ mod tests {
             Ok((
                 "",
                 ValueAddress {
-                    offset1: OffsetValue::Reference(Register::AP, 0_i32, true),
+                    offset1: OffsetValue::Reference(Register::AP, 0_i32, true, true),
                     offset2: OffsetValue::Value(1),
                     outer_dereference: true,
                     inner_dereference: false,
@@ -625,7 +663,7 @@ mod tests {
             Ok((
                 "",
                 ValueAddress {
-                    offset1: OffsetValue::Reference(Register::AP, 0_i32, true),
+                    offset1: OffsetValue::Reference(Register::AP, 0_i32, true, true),
                     offset2: OffsetValue::Value(1),
                     outer_dereference: true,
                     inner_dereference: false,
@@ -646,8 +684,8 @@ mod tests {
             Ok((
                 "",
                 ValueAddress {
-                    offset1: OffsetValue::Reference(Register::AP, 0_i32, true),
-                    offset2: OffsetValue::Reference(Register::AP, 0_i32, true),
+                    offset1: OffsetValue::Reference(Register::AP, 0_i32, true, true),
+                    offset2: OffsetValue::Reference(Register::AP, 0_i32, true, true),
                     outer_dereference: true,
                     inner_dereference: false,
                     value_type: "felt".to_string(),
@@ -667,7 +705,7 @@ mod tests {
             Ok((
                 "",
                 ValueAddress {
-                    offset1: OffsetValue::Reference(Register::FP, -3_i32, true),
+                    offset1: OffsetValue::Reference(Register::FP, -3_i32, true, true),
                     offset2: OffsetValue::Value(5),
                     outer_dereference: true,
                     inner_dereference: true,
@@ -688,8 +726,8 @@ mod tests {
             Ok((
                 "",
                 ValueAddress {
-                    offset1: OffsetValue::Reference(Register::AP, 1_i32, true),
-                    offset2: OffsetValue::Reference(Register::AP, 2_i32, true),
+                    offset1: OffsetValue::Reference(Register::AP, 1_i32, true, true),
+                    offset2: OffsetValue::Reference(Register::AP, 2_i32, true, true),
                     outer_dereference: true,
                     inner_dereference: false,
                     value_type: "felt".to_string(),

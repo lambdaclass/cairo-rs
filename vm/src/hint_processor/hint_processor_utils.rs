@@ -70,7 +70,12 @@ pub fn get_maybe_relocatable_from_reference(
         &hint_reference.ap_tracking_data,
         ap_tracking,
     )?;
-    let mut val = offset1.add(&offset2).ok()?;
+    let mut val = match hint_reference.offset2 {
+        OffsetValue::Reference(_, _, _, true)
+        | OffsetValue::Immediate(_)
+        | OffsetValue::Value(_) => offset1.add(&offset2).ok()?,
+        OffsetValue::Reference(_, _, _, false) => offset1.sub(&offset2).ok()?,
+    };
     if hint_reference.inner_dereference && hint_reference.outer_dereference {
         val = vm.get_maybe(&val)?;
     }
@@ -139,7 +144,7 @@ fn get_offset_value(
     match offset_value {
         OffsetValue::Immediate(f) => Some(f.into()),
         OffsetValue::Value(v) => Some(Felt252::from(*v).into()),
-        OffsetValue::Reference(register, offset, deref) => {
+        OffsetValue::Reference(register, offset, deref, _) => {
             let addr = (if matches!(register, Register::FP) {
                 vm.get_fp()
             } else {
@@ -176,7 +181,7 @@ mod tests {
         // Reference: cast(2, felt)
         let mut vm = vm!();
         vm.segments = segments![((1, 0), 0)];
-        let mut hint_ref = HintReference::new(0, 0, false, false);
+        let mut hint_ref = HintReference::new(0, 0, false, false, true);
         hint_ref.offset1 = OffsetValue::Immediate(Felt252::from(2));
 
         assert_eq!(
@@ -191,8 +196,8 @@ mod tests {
     fn get_offset_value_reference_valid() {
         let mut vm = vm!();
         vm.segments = segments![((1, 0), 0)];
-        let mut hint_ref = HintReference::new(0, 0, false, true);
-        hint_ref.offset1 = OffsetValue::Reference(Register::FP, 2_i32, false);
+        let mut hint_ref = HintReference::new(0, 0, false, true, true);
+        hint_ref.offset1 = OffsetValue::Reference(Register::FP, 2_i32, false, true);
 
         assert_matches!(
             get_offset_value(&vm, &hint_ref.offset1, &hint_ref.ap_tracking_data, &ApTracking::new()),
@@ -205,8 +210,8 @@ mod tests {
     fn get_offset_value_invalid() {
         let mut vm = vm!();
         vm.segments = segments![((1, 0), 0)];
-        let mut hint_ref = HintReference::new(0, 0, false, true);
-        hint_ref.offset1 = OffsetValue::Reference(Register::FP, -2_i32, false);
+        let mut hint_ref = HintReference::new(0, 0, false, true, true);
+        hint_ref.offset1 = OffsetValue::Reference(Register::FP, -2_i32, false, true);
 
         assert_matches!(
             get_offset_value(
@@ -228,7 +233,7 @@ mod tests {
         assert_matches!(
             get_ptr_from_reference(
                 &vm,
-                &HintReference::new(0, 0, false, false),
+                &HintReference::new(0, 0, false, false, true),
                 &ApTracking::new()
             ),
             Ok(x) if x == relocatable!(1, 0)
@@ -244,7 +249,7 @@ mod tests {
         assert_matches!(
             get_ptr_from_reference(
                 &vm,
-                &HintReference::new(0, 0, false, true),
+                &HintReference::new(0, 0, false, true, true),
                 &ApTracking::new()
             ),
             Ok(x) if x == relocatable!(3, 0)
@@ -256,7 +261,7 @@ mod tests {
     fn get_ptr_from_reference_with_dereference_and_imm() {
         let mut vm = vm!();
         vm.segments = segments![((1, 0), (4, 0))];
-        let mut hint_ref = HintReference::new(0, 0, true, false);
+        let mut hint_ref = HintReference::new(0, 0, true, false, true);
         hint_ref.offset2 = OffsetValue::Value(2);
 
         assert_matches!(
@@ -270,7 +275,7 @@ mod tests {
     fn compute_addr_from_reference_no_regiter_in_reference() {
         let mut vm = vm!();
         vm.segments = segments![((1, 0), (4, 0))];
-        let mut hint_reference = HintReference::new(0, 0, false, false);
+        let mut hint_reference = HintReference::new(0, 0, false, false, true);
         hint_reference.offset1 = OffsetValue::Immediate(Felt252::from(2_i32));
 
         assert!(compute_addr_from_reference(&hint_reference, &vm, &ApTracking::new()).is_none());
@@ -282,8 +287,8 @@ mod tests {
         let mut vm = vm!();
         vm.segments = segments![((1, 0), 4)];
         // vm.run_context.fp = -1;
-        let mut hint_reference = HintReference::new(0, 0, false, false);
-        hint_reference.offset1 = OffsetValue::Reference(Register::FP, -1, true);
+        let mut hint_reference = HintReference::new(0, 0, false, false, true);
+        hint_reference.offset1 = OffsetValue::Reference(Register::FP, -1, true, true);
 
         assert_matches!(
             compute_addr_from_reference(&hint_reference, &vm, &ApTracking::new()),
@@ -356,7 +361,7 @@ mod tests {
             ((0, 5), 3)       // [[[fp + 2] + 2]] -> [(0, 5)] -> 3
         ];
         let hint_ref = HintReference {
-            offset1: OffsetValue::Reference(Register::FP, 2, true),
+            offset1: OffsetValue::Reference(Register::FP, 2, true, true),
             offset2: OffsetValue::Value(2),
             outer_dereference: true,
             inner_dereference: true,
@@ -381,7 +386,7 @@ mod tests {
         ];
         // [fp + 4] + (-5) = 8 - 5 = 3
         let hint_ref = HintReference {
-            offset1: OffsetValue::Reference(Register::FP, 4, true),
+            offset1: OffsetValue::Reference(Register::FP, 4, true, true),
             offset2: OffsetValue::Immediate(Felt252::from(-5)),
             outer_dereference: false,
             inner_dereference: false,

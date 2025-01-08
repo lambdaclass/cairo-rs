@@ -126,6 +126,8 @@ pub struct ModInputInstance {
     pub values_ptr: usize,
     pub offsets_ptr: usize,
     pub n: usize,
+    #[serde(deserialize_with = "mod_input_instance_batch_serde::deserialize")]
+    #[serde(serialize_with = "mod_input_instance_batch_serde::serialize")]
     pub batch: BTreeMap<usize, ModInputMemoryVars>,
 }
 
@@ -202,6 +204,88 @@ impl From<AirPrivateInputSerializable> for AirPrivateInput {
 impl AirPrivateInputSerializable {
     pub fn serialize_json(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string_pretty(&self)
+    }
+}
+
+mod mod_input_instance_batch_serde {
+    use super::*;
+
+    use serde::{Deserializer, Serializer};
+
+    pub(crate) fn serialize<S: Serializer>(
+        value: &BTreeMap<usize, ModInputMemoryVars>,
+        s: S,
+    ) -> Result<S::Ok, S::Error> {
+        let value = value.iter().map(|v| v.1).collect::<Vec<_>>();
+
+        value.serialize(s)
+    }
+
+    pub(crate) fn deserialize<'de, D: Deserializer<'de>>(
+        d: D,
+    ) -> Result<BTreeMap<usize, ModInputMemoryVars>, D::Error> {
+        let value = Vec::<ModInputMemoryVars>::deserialize(d)?;
+
+        Ok(value.into_iter().enumerate().collect())
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn test_serde() {
+        let input_value = vec![
+            (
+                0,
+                ModInputMemoryVars {
+                    a_offset: 5,
+                    b_offset: 5,
+                    c_offset: 5,
+                    a0: Felt252::from(5u32),
+                    a1: Felt252::from(5u32),
+                    a2: Felt252::from(5u32),
+                    a3: Felt252::from(5u32),
+                    b0: Felt252::from(5u32),
+                    b1: Felt252::from(5u32),
+                    b2: Felt252::from(5u32),
+                    b3: Felt252::from(5u32),
+                    c0: Felt252::from(5u32),
+                    c1: Felt252::from(5u32),
+                    c2: Felt252::from(5u32),
+                    c3: Felt252::from(5u32),
+                },
+            ),
+            (
+                1,
+                ModInputMemoryVars {
+                    a_offset: 7,
+                    b_offset: 7,
+                    c_offset: 7,
+                    a0: Felt252::from(7u32),
+                    a1: Felt252::from(7u32),
+                    a2: Felt252::from(7u32),
+                    a3: Felt252::from(7u32),
+                    b0: Felt252::from(7u32),
+                    b1: Felt252::from(7u32),
+                    b2: Felt252::from(7u32),
+                    b3: Felt252::from(7u32),
+                    c0: Felt252::from(7u32),
+                    c1: Felt252::from(7u32),
+                    c2: Felt252::from(7u32),
+                    c3: Felt252::from(7u32),
+                },
+            ),
+        ]
+        .into_iter()
+        .collect::<BTreeMap<usize, _>>();
+
+        let bytes = Vec::new();
+        let mut serializer = serde_json::Serializer::new(bytes);
+        serialize(&input_value, &mut serializer).unwrap();
+        let bytes = serializer.into_inner();
+
+        let mut deserializer = serde_json::Deserializer::from_slice(&bytes);
+        let output_value = deserialize(&mut deserializer).unwrap();
+
+        assert_eq!(input_value, output_value);
     }
 }
 

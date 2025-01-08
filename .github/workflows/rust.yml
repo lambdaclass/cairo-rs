@@ -161,7 +161,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@1.80.0
+      uses: dtolnay/rust-toolchain@1.81.0
       with:
           components: rustfmt, clippy
     - name: Set up cargo cache
@@ -201,7 +201,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@1.80.0
+      uses: dtolnay/rust-toolchain@1.81.0
       with:
         targets: wasm32-unknown-unknown
 
@@ -247,7 +247,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@1.80.0
+      uses: dtolnay/rust-toolchain@1.81.0
       with:
         targets: wasm32-unknown-unknown
 
@@ -287,7 +287,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@1.80.0
+      uses: dtolnay/rust-toolchain@1.81.0
       with:
         targets: wasm32-unknown-unknown
 
@@ -323,13 +323,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        special_features: ["", "extensive_hints", "mod_builtin"]
+        special_features: ["", "extensive_hints", "mod_builtin", "cairo-0-secp-hints", "cairo-0-data-availability-hints"]
         target: [ test#1, test#2, test#3, test#4, test-no_std#1, test-no_std#2, test-no_std#3, test-no_std#4, test-wasm ]
     name: Run tests
     runs-on: ubuntu-22.04
     steps:
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@1.80.0
+      uses: dtolnay/rust-toolchain@1.81.0
       with:
           components: llvm-tools-preview
     - name: Set up cargo cache
@@ -370,7 +370,7 @@ jobs:
         'test')
           cargo llvm-cov nextest --lcov --output-path lcov-${{ matrix.target }}-${{ matrix.special_features }}.info \
               --partition count:${PARTITION}/4 \
-              --workspace --features "cairo-1-hints,  test_utils, ${{ matrix.special_features }}"
+              --workspace --features "cairo-1-hints, test_utils, ${{ matrix.special_features }}"
           ;;
         'test-no_std')
           cargo llvm-cov nextest --lcov --output-path lcov-${{ matrix.target }}-${{ matrix.special_features }}.info \
@@ -395,7 +395,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@1.80.0
+      uses: dtolnay/rust-toolchain@1.81.0
     - name: Set up cargo cache
       uses: Swatinem/rust-cache@v2
     - name: Checkout
@@ -600,6 +600,36 @@ jobs:
         key: codecov-cache-test-no_std-extensive_hints-${{ github.sha }}
         fail-on-cache-miss: true
 
+    - name: Fetch results for tests with stdlib (w/mod_builtin; part. 1)
+      uses: actions/cache/restore@v3
+      with:
+        path: lcov-test#1-mod_builtin.info
+        key: codecov-cache-test#1-mod_builtin-${{ github.sha }}
+        fail-on-cache-miss: true
+    - name: Fetch results for tests with stdlib (w/mod_builtin; part. 2)
+      uses: actions/cache/restore@v3
+      with:
+        path: lcov-test#2-mod_builtin.info
+        key: codecov-cache-test#2-mod_builtin-${{ github.sha }}
+        fail-on-cache-miss: true
+    - name: Fetch results for tests with stdlib (w/mod_builtin; part. 3)
+      uses: actions/cache/restore@v3
+      with:
+        path: lcov-test#3-mod_builtin.info
+        key: codecov-cache-test#3-mod_builtin-${{ github.sha }}
+        fail-on-cache-miss: true
+    - name: Fetch results for tests with stdlib (w/mod_builtin; part. 4)
+      uses: actions/cache/restore@v3
+      with:
+        path: lcov-test#4-mod_builtin.info
+        key: codecov-cache-test#4-mod_builtin-${{ github.sha }}
+        fail-on-cache-miss: true
+    - name: Fetch results for tests without stdlib (w/mod_builtin)
+      uses: actions/cache/restore@v3
+      with:
+        path: lcov-no_std-mod_builtin.info
+        key: codecov-cache-test-no_std-mod_builtin-${{ github.sha }}
+        fail-on-cache-miss: true
 
     - name: Upload coverage to codecov.io
       uses: codecov/codecov-action@v3
@@ -725,6 +755,57 @@ jobs:
     - name: Run script
       run: ./vm/src/tests/compare_factorial_outputs_all_layouts.sh
 
+  compare-outputs-dynamic-layouts:
+    name: Compare outputs with dynamic layouts
+    needs: [ build-programs, build-release, run-cairo-release ]
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Python3 Build
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+
+    - name: Install cairo-lang and deps
+      run: pip install -r requirements.txt
+
+    - name: Fetch release binary
+      uses: actions/cache/restore@v3
+      with:
+        key: cli-bin-rel-${{ github.sha }}
+        path: target/release/cairo-vm-cli
+        fail-on-cache-miss: true
+
+    - uses: actions/download-artifact@master
+      with:
+        name: proof_programs
+        path: cairo_programs/proof_programs/
+
+    - name: Fetch programs
+      uses: actions/cache/restore@v3
+      with:
+        path: ${{ env.CAIRO_PROGRAMS_PATH }}
+        key: cairo_proof_programs-cache-${{ hashFiles('cairo_programs/**/*.cairo', 'examples/wasm-demo/src/array_sum.cairo') }}
+        fail-on-cache-miss: true
+
+    - name: Fetch pie
+      uses: actions/cache/restore@v3
+      with:
+        path: |
+          cairo_programs/**/*.memory
+          cairo_programs/**/*.trace
+          cairo_programs/**/*.air_public_input
+          cairo_programs/**/*.air_private_input
+          cairo_programs/**/*.pie.zip
+        key: cairo_test_programs-release-trace-cache-${{ github.sha }}
+        fail-on-cache-miss: true
+
+    - name: Run script
+      run: ./vm/src/tests/compare_outputs_dynamic_layouts.sh
+
   compare-run-from-cairo-pie-all-outputs:
     name: Compare all outputs from running Cairo PIEs
     needs: [ build-programs, build-release, run-cairo-release ]
@@ -763,4 +844,3 @@ jobs:
    
     - name: Run comparison
       run: ./vm/src/tests/compare_all_pie_outputs.sh
-

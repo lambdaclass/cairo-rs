@@ -34,6 +34,7 @@ fn build_runner() {
     let runner = CairoRunner::new(
         black_box(&program),
         LayoutName::starknet_with_keccak,
+        None,
         false,
         false,
     )
@@ -47,7 +48,14 @@ fn build_runner_helper() -> CairoRunner {
     //Picked the biggest one at the time of writing
     let program = include_bytes!("../cairo_programs/benchmarks/keccak_integration_benchmark.json");
     let program = Program::from_bytes(program.as_slice(), Some("main")).unwrap();
-    CairoRunner::new(&program, LayoutName::starknet_with_keccak, false, false).unwrap()
+    CairoRunner::new(
+        &program,
+        LayoutName::starknet_with_keccak,
+        None,
+        false,
+        false,
+    )
+    .unwrap()
 }
 
 #[inline(never)]

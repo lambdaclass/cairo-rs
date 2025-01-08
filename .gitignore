@@ -26,4 +26,5 @@ cairo-vm-cli/air_input.pub
 ensure-no_std/Cargo.lock
 cairo_programs/proof_programs/*.cairo
 
+!cairo_layout_params_file.json
 !vm/src/tests/cairo_pie_test_output.json

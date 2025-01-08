@@ -118,8 +118,10 @@ pub fn get_point_from_x(
         .pack86()
         .mod_floor(&SECP_P);
     let y_cube_int = (x_cube_int + beta).mod_floor(&SECP_P);
+    exec_scopes.insert_value("y_square_int", y_cube_int.clone());
     // Divide by 4
     let mut y = y_cube_int.modpow(&(&*SECP_P + 1_u32).shr(2_u32), &SECP_P);
+    exec_scopes.insert_value::<BigInt>("y", y.clone());
 
     let v = get_integer_from_var_name("v", vm, ids_data, ap_tracking)?.to_bigint();
     if v.is_even() != y.is_even() {

@@ -27,12 +27,12 @@ use num_traits::{One, ToPrimitive, Zero};
 use super::secp_utils::SECP256R1_P;
 
 #[derive(Debug, PartialEq)]
-struct EcPoint<'a> {
-    x: BigInt3<'a>,
-    y: BigInt3<'a>,
+pub(crate) struct EcPoint<'a> {
+    pub(crate) x: BigInt3<'a>,
+    pub(crate) y: BigInt3<'a>,
 }
 impl EcPoint<'_> {
-    fn from_var_name<'a>(
+    pub(crate) fn from_var_name<'a>(
         name: &'a str,
         vm: &'a VirtualMachine,
         ids_data: &'a HashMap<String, HintReference>,

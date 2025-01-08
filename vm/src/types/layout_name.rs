@@ -36,7 +36,7 @@ impl LayoutName {
             LayoutName::recursive_with_poseidon => "recursive_with_poseidon",
             LayoutName::all_solidity => "all_solidity",
             LayoutName::all_cairo => "all_cairo",
-            LayoutName::dynamic => "all_cairo",
+            LayoutName::dynamic => "dynamic",
         }
     }
 }

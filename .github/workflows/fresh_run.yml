@@ -33,12 +33,12 @@ jobs:
         sudo rm -rf /opt/ghc
         sudo rm -rf "/usr/local/share/boost"
         sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-     
+
     - name: Checkout
       uses: actions/checkout@v3
-    
+
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@1.80.0
+      uses: dtolnay/rust-toolchain@1.81.0
 
     - name: Install Pyenv
       uses: "gabrielfalcao/pyenv-action@v13"

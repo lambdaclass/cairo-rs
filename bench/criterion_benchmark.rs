@@ -30,6 +30,7 @@ fn build_many_runners(c: &mut Criterion) {
                 CairoRunner::new(
                     black_box(&program),
                     black_box(LayoutName::starknet_with_keccak),
+                    black_box(None),
                     black_box(false),
                     black_box(false),
                 )
@@ -45,7 +46,16 @@ fn load_program_data(c: &mut Criterion) {
     let program = Program::from_bytes(program.as_slice(), Some("main")).unwrap();
     c.bench_function("initialize", |b| {
         b.iter_batched(
-            || CairoRunner::new(&program, LayoutName::starknet_with_keccak, false, false).unwrap(),
+            || {
+                CairoRunner::new(
+                    &program,
+                    LayoutName::starknet_with_keccak,
+                    None,
+                    false,
+                    false,
+                )
+                .unwrap()
+            },
             |mut runner| _ = black_box(runner.initialize(false).unwrap()),
             BatchSize::SmallInput,
         )

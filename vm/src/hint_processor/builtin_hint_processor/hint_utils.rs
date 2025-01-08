@@ -149,7 +149,7 @@ mod tests {
     fn get_ptr_from_var_name_immediate_value() {
         let mut vm = vm!();
         vm.segments = segments![((1, 0), (0, 0))];
-        let mut hint_ref = HintReference::new(0, 0, true, false);
+        let mut hint_ref = HintReference::new(0, 0, true, false, true);
         hint_ref.offset2 = OffsetValue::Value(2);
         let ids_data = HashMap::from([("imm".to_string(), hint_ref)]);
 

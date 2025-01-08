@@ -177,7 +177,7 @@ fn get_value_from_simple_reference(
         .get(ref_id)?;
     // Filter ap-based references
     match reference.offset1 {
-        OffsetValue::Reference(Register::AP, _, _) => None,
+        OffsetValue::Reference(Register::AP, _, _, _) => None,
         _ => {
             // Filer complex types (only felt/felt pointers)
             match reference.cairo_type {

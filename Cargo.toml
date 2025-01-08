@@ -16,7 +16,7 @@ exclude = ["ensure-no_std"]
 resolver = "2"
 
 [workspace.package]
-version = "1.0.1"
+version = "2.0.0-rc3"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/lambdaclass/cairo-vm/"
@@ -24,8 +24,8 @@ readme = "README.md"
 keywords = ["starknet", "cairo", "vm", "wasm", "no_std"]
 
 [workspace.dependencies]
-cairo-vm = { path = "./vm", version = "1.0.1", default-features = false }
-cairo-vm-tracer = { path = "./cairo-vm-tracer", version = "1.0.1", default-features = false }
+cairo-vm = { path = "./vm", version = "2.0.0-rc3", default-features = false }
+cairo-vm-tracer = { path = "./cairo-vm-tracer", version = "2.0.0-rc3", default-features = false }
 mimalloc = { version = "0.1.37", default-features = false }
 num-bigint = { version = "0.4", default-features = false, features = [
     "serde",
@@ -43,7 +43,7 @@ hex = { version = "0.4.3", default-features = false }
 bincode = { version = "2.0.0-rc.3", default-features = false, features = [
     "serde",
 ] }
-starknet-crypto = { version = "0.6.1", default-features = false, features = [
+starknet-crypto = { version = "0.7.3", default-features = false, features = [
     "signature-display",
     "alloc",
 ] }
@@ -55,22 +55,22 @@ nom = { version = "7", default-features = false }
 sha2 = { version = "0.10.7", features = ["compress"], default-features = false }
 generic-array = { version = "0.14.7", default-features = false }
 keccak = { version = "0.1.2", default-features = false }
-hashbrown = { version = "0.14.0", features = ["serde"] }
-anyhow = { version = "1.0.69", default-features = false }
+hashbrown = { version = "0.15.2", features = ["serde"] }
+anyhow = { version = "1.0.94", default-features = false }
 thiserror-no-std = { version = "2.0.2", default-features = false }
 
 bitvec = { version = "1", default-features = false, features = ["alloc"] }
 
 # Dependencies for cairo-1-hints feature
-cairo-lang-starknet = { version = "2.8.0", default-features = false }
-cairo-lang-casm = { version = "2.8.0", default-features = false }
+cairo-lang-starknet = { version = "2.10.0-rc.0", default-features = false }
+cairo-lang-casm = { version = "2.10.0-rc.0", default-features = false }
 
-cairo-lang-starknet-classes = { version = "2.8.0", default-features = false }
-cairo-lang-compiler = { version = "=2.8.0", default-features = false }
-cairo-lang-sierra-to-casm = { version = "2.8.0", default-features = false }
-cairo-lang-sierra = { version = "2.8.0", default-features = false }
-cairo-lang-runner = { version = "2.8.0", default-features = false }
-cairo-lang-utils = { version = "=2.8.0", default-features = false }
+cairo-lang-starknet-classes = { version = "2.10.0-rc.0", default-features = false }
+cairo-lang-compiler = { version = "=2.10.0-rc.0", default-features = false }
+cairo-lang-sierra-to-casm = { version = "2.10.0-rc.0", default-features = false }
+cairo-lang-sierra = { version = "2.10.0-rc.0", default-features = false }
+cairo-lang-runner = { version = "2.10.0-rc.0", default-features = false }
+cairo-lang-utils = { version = "=2.10.0-rc.0", default-features = false }
 
 # TODO: check these dependencies for wasm compatibility
 ark-ff = { version = "0.4.2", default-features = false }

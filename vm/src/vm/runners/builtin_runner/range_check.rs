@@ -4,7 +4,7 @@ use crate::{
         cmp::{max, min},
         prelude::*,
     },
-    types::builtin_name::BuiltinName,
+    types::{builtin_name::BuiltinName, instance_definitions::LowRatio},
 };
 
 use crate::Felt252;
@@ -35,7 +35,7 @@ lazy_static! {
 
 #[derive(Debug, Clone)]
 pub struct RangeCheckBuiltinRunner<const N_PARTS: u64> {
-    ratio: Option<u32>,
+    ratio: Option<LowRatio>,
     base: usize,
     pub(crate) stop_ptr: Option<usize>,
     pub(crate) included: bool,
@@ -43,6 +43,18 @@ pub struct RangeCheckBuiltinRunner<const N_PARTS: u64> {
 
 impl<const N_PARTS: u64> RangeCheckBuiltinRunner<N_PARTS> {
     pub fn new(ratio: Option<u32>, included: bool) -> RangeCheckBuiltinRunner<N_PARTS> {
+        RangeCheckBuiltinRunner {
+            ratio: ratio.map(LowRatio::new_int),
+            base: 0,
+            stop_ptr: None,
+            included,
+        }
+    }
+
+    pub fn new_with_low_ratio(
+        ratio: Option<LowRatio>,
+        included: bool,
+    ) -> RangeCheckBuiltinRunner<N_PARTS> {
         RangeCheckBuiltinRunner {
             ratio,
             base: 0,
@@ -68,7 +80,11 @@ impl<const N_PARTS: u64> RangeCheckBuiltinRunner<N_PARTS> {
     }
 
     pub fn ratio(&self) -> Option<u32> {
-        self.ratio
+        self.ratio.map(|ratio| ratio.numerator)
+    }
+
+    pub fn ratio_den(&self) -> Option<u32> {
+        self.ratio.map(|ratio| ratio.denominator)
     }
 
     pub fn name(&self) -> BuiltinName {

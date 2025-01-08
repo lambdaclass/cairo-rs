@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@1.80.0
+        uses: dtolnay/rust-toolchain@1.81.0
       - name: Set up Cargo cache
         uses: Swatinem/rust-cache@v2
       - name: Checkout

@@ -3,4 +3,4 @@ bitarray==2.7.3
 fastecdsa==2.3.0
 sympy==1.11.1
 typeguard==2.13.3
-cairo-lang==0.13.2
+cairo-lang==0.13.3

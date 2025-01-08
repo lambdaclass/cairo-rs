@@ -289,6 +289,10 @@ impl CairoPie {
             return Err(CairoPieValidationError::DiffAdditionalData);
         }
         for (name, data) in self.additional_data.0.iter() {
+            // As documented above, we skip the pedersen field when comparing.
+            if *name == BuiltinName::pedersen {
+                continue;
+            }
             if !pie.additional_data.0.get(name).is_some_and(|d| d == data) {
                 return Err(CairoPieValidationError::DiffAdditionalDataForBuiltin(*name));
             }
@@ -759,6 +763,9 @@ pub(super) mod serde_impl {
             BuiltinName::ec_op,
             BuiltinName::keccak,
             BuiltinName::poseidon,
+            BuiltinName::range_check96,
+            BuiltinName::add_mod,
+            BuiltinName::mul_mod,
         ];
 
         for name in BUILTIN_ORDERED_LIST {

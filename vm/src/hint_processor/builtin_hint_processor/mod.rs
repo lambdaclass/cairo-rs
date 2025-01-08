@@ -38,3 +38,7 @@ pub mod uint384_extension;
 pub mod uint_utils;
 pub mod usort;
 pub mod vrf;
+
+#[cfg(feature = "cairo-0-data-availability-hints")]
+#[cfg_attr(docsrs, doc(cfg(feature = "cairo-0-data-availability-hints")))]
+pub mod kzg_da;

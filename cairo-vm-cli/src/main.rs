@@ -6,6 +6,7 @@ use cairo_vm::cairo_run::{self, EncodeTraceError};
 use cairo_vm::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::BuiltinHintProcessor;
 #[cfg(feature = "with_tracer")]
 use cairo_vm::serde::deserialize_program::DebugInfo;
+use cairo_vm::types::layout::CairoLayoutParams;
 use cairo_vm::types::layout_name::LayoutName;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::errors::trace_errors::TraceError;
@@ -43,8 +44,13 @@ struct Args {
     entrypoint: String,
     #[structopt(long = "memory_file")]
     memory_file: Option<PathBuf>,
+    /// When using dynamic layout, it's parameters must be specified through a layout params file.
     #[clap(long = "layout", default_value = "plain", value_enum)]
     layout: LayoutName,
+    /// Required when using with dynamic layout.
+    /// Ignored otherwise.
+    #[clap(long = "cairo_layout_params_file", required_if_eq("layout", "dynamic"))]
+    cairo_layout_params_file: Option<PathBuf>,
     #[structopt(long = "proof_mode")]
     proof_mode: bool,
     #[structopt(long = "secure_run")]
@@ -162,6 +168,11 @@ fn run(args: impl Iterator<Item = String>) -> Result<(), Error> {
 
     let trace_enabled = args.trace_file.is_some() || args.air_public_input.is_some();
 
+    let cairo_layout_params = match args.cairo_layout_params_file {
+        Some(file) => Some(CairoLayoutParams::from_file(&file)?),
+        None => None,
+    };
+
     let cairo_run_config = cairo_run::CairoRunConfig {
         entrypoint: &args.entrypoint,
         trace_enabled,
@@ -170,6 +181,7 @@ fn run(args: impl Iterator<Item = String>) -> Result<(), Error> {
         proof_mode: args.proof_mode,
         secure_run: args.secure_run,
         allow_missing_builtins: args.allow_missing_builtins,
+        dynamic_layout_params: cairo_layout_params,
         ..Default::default()
     };
 
@@ -403,6 +415,19 @@ mod tests {
     fn test_run_bad_file(#[case] program: &str) {
         let args = ["cairo-vm-cli", program].into_iter().map(String::from);
         assert_matches!(run(args), Err(Error::Runner(_)));
+    }
+
+    #[test]
+    fn test_run_dynamic_params() {
+        let mut args = vec!["cairo-vm-cli".to_string()];
+        args.extend_from_slice(&["--layout".to_string(), "dynamic".to_string()]);
+        args.extend_from_slice(&[
+            "--cairo_layout_params_file".to_string(),
+            "../vm/src/tests/cairo_layout_params_file.json".to_string(),
+        ]);
+        args.push("../cairo_programs/proof_programs/fibonacci.json".to_string());
+
+        assert_matches!(run(args.into_iter()), Ok(_));
     }
 
     //Since the functionality here is trivial, I just call the function

@@ -4,6 +4,72 @@
 
 * fix: Always use a normal segment in first SegmentArena segment [#1845](https://github.com/lambdaclass/cairo-vm/pull/1845)
 
+* feat: implement `kzg` data availability hints [#1887](https://github.com/lambdaclass/cairo-vm/pull/1887)
+
+#### [2.0.0-rc3] - 2024-12-26
+
+* chore: update cairo-lang dependencies to 2.10.0-rc.0 #[1901](https://github.com/lambdaclass/cairo-vm/pull/1901)
+
+#### [2.0.0-rc2] - 2024-12-12
+
+* feat: Add support for subtractions containing references as right hand side operands [#1898](https://github.com/lambdaclass/cairo-vm/pull/1898)
+
+* fix: Change wildcard getrandom dependency.
+
+* Update starknet-crypto to 0.7.3, removing the old FieldElement completly in favour of the new Felt (that is Copy).
+
+* chore: update the cairo-vm version used in the readme
+
+* chore: update cairo-lang dependencies to 2.9.2
+
+* fix: replace `div_rem` with `div_mod_floor` in `verify_zero` hints [#1881](https://github.com/lambdaclass/cairo-vm/pull/1881)
+
+* feat: Implement `SECP related` hints [#1829](https://github.com/lambdaclass/cairo-vm/pull/1829)
+
+* chore: bump pip `cairo-lang` 0.13.3 [#1884](https://github.com/lambdaclass/cairo-vm/pull/1884)
+
+* fix: [#1862](https://github.com/lambdaclass/cairo-vm/pull/1862):
+  * Use MaybeRelocatable for relocation table
+
+* chore: bump pip `cairo-lang` 0.13.3 [#1884](https://github.com/lambdaclass/cairo-vm/pull/1884)
+
+* chore: [#1880](https://github.com/lambdaclass/cairo-vm/pull/1880):
+  * Refactor vm crate to make it possible to use hint extension feature for nested programs with hints.
+
+#### [2.0.0-rc1] - 2024-11-20
+
+* feat: add `EvalCircuit` and `TestLessThanOrEqualAddress` hints [#1843](https://github.com/lambdaclass/cairo-vm/pull/1843)
+
+* fix: [#1873](https://github.com/lambdaclass/cairo-vm/pull/1873)
+  * Fix broken num-prime `is_prime` call
+* fix: [#1868](https://github.com/lambdaclass/cairo-vm/pull/1855):
+  * Adds logic to include the 3 new builtins in `builtin_segments` when serializing the output cairo pie's metadata.
+
+* fix: [#1855](https://github.com/lambdaclass/cairo-vm/pull/1855):
+  * Adds logic to skip pedersen additional data comparison when checking pie compatibility.
+
+* serde: add `size` field to `Identifier` [#1861]https://github.com/lambdaclass/cairo-vm/pull/1861
+
+#### [2.0.0-rc0] - 2024-10-22
+
+* fix: [#1864](https://github.com/lambdaclass/cairo-vm/pull/1864):
+    * Runner: include data from constants segment to the bytecode when assembling program
+
+* chore: bump `cairo-lang-` dependencies to 2.9.0-dev.0 [#1858](https://github.com/lambdaclass/cairo-vm/pull/1858/files)
+
+* chore: update Rust required version to 1.81.0 [#1857](https://github.com/lambdaclass/cairo-vm/pull/1857)
+
+* fix: [#1851](https://github.com/lambdaclass/cairo-vm/pull/1851):
+  * Fix unsorted signature and mod builtin outputs in air_private_input.
+
+* feat(BREAKING): [#1824](https://github.com/lambdaclass/cairo-vm/pull/1824)[#1838](https://github.com/lambdaclass/cairo-vm/pull/1838):
+    * Add support for dynamic layout
+    * CLI change(BREAKING): The flag `cairo_layout_params_file` must be specified when using dynamic layout.
+    * Signature change(BREAKING): Both `CairoRunner::new` and `CairoRunner::new_v2` now receive an `Option<CairoLayoutParams>`, used only with dynamic layout.
+
+* fix: [#1841](https://github.com/lambdaclass/cairo-vm/pull/1841):
+  * Fix modulo builtin to comply with prover constraints
+
 * chore: bump pip `cairo-lang` 0.13.2 [#1827](https://github.com/lambdaclass/cairo-vm/pull/1827)
 
 * chore: bump `cairo-lang-` dependencies to 2.8.0 [#1833](https://github.com/lambdaclass/cairo-vm/pull/1833/files)

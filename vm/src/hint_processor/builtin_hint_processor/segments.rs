@@ -19,7 +19,10 @@ pub fn relocate_segment(
     ap_tracking: &ApTracking,
 ) -> Result<(), HintError> {
     let src_ptr = get_ptr_from_var_name("src_ptr", vm, ids_data, ap_tracking)?;
+    #[cfg(not(feature = "extensive_hints"))]
     let dest_ptr = get_ptr_from_var_name("dest_ptr", vm, ids_data, ap_tracking)?;
+    #[cfg(feature = "extensive_hints")]
+    let dest_ptr = crate::hint_processor::builtin_hint_processor::hint_utils::get_maybe_relocatable_from_var_name("dest_ptr", vm, ids_data, ap_tracking)?;
 
     vm.add_relocation_rule(src_ptr, dest_ptr)
         .map_err(HintError::Memory)?;

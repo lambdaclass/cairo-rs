@@ -11,12 +11,13 @@ use cairo_lang_casm::{
 use cairo_lang_sierra::{
     extensions::{
         bitwise::BitwiseType,
+        circuit::{AddModType, MulModType},
         core::{CoreLibfunc, CoreType},
         ec::EcOpType,
         gas::GasBuiltinType,
         pedersen::PedersenType,
         poseidon::PoseidonType,
-        range_check::RangeCheckType,
+        range_check::{RangeCheck96Type, RangeCheckType},
         segment_arena::SegmentArenaType,
         starknet::syscalls::SystemType,
         ConcreteType, NamedType,
@@ -38,8 +39,8 @@ use cairo_vm::{
     math_utils::signed_felt,
     serde::deserialize_program::{ApTracking, FlowTrackingData, HintParams, ReferenceManager},
     types::{
-        builtin_name::BuiltinName, layout_name::LayoutName, program::Program,
-        relocatable::MaybeRelocatable,
+        builtin_name::BuiltinName, layout::CairoLayoutParams, layout_name::LayoutName,
+        program::Program, relocatable::MaybeRelocatable,
     },
     vm::{
         errors::{runner_errors::RunnerError, vm_errors::VirtualMachineError},
@@ -86,6 +87,7 @@ pub struct Cairo1RunConfig<'a> {
     pub relocate_mem: bool,
     /// Cairo layout chosen for the run
     pub layout: LayoutName,
+    pub dynamic_layout_params: Option<CairoLayoutParams>,
     /// Run in proof_mode
     pub proof_mode: bool,
     /// Should be true if either air_public_input or cairo_pie_output are needed
@@ -106,6 +108,7 @@ impl Default for Cairo1RunConfig<'_> {
             proof_mode: false,
             finalize_builtins: false,
             append_return_values: false,
+            dynamic_layout_params: None,
         }
     }
 }
@@ -202,10 +205,14 @@ pub fn cairo_run_program(
         cairo_run_config.copy_to_output(),
     );
 
-    let data: Vec<MaybeRelocatable> = instructions
-        .flat_map(|inst| inst.assemble().encode())
-        .map(|x| Felt252::from(&x))
-        .map(MaybeRelocatable::from)
+    // The bytecode includes all program instructions plus entry/footer,
+    // plus data from the constants segments.
+    let data: Vec<MaybeRelocatable> = casm_program
+        .assemble_ex(&entry_code.instructions, &libfunc_footer)
+        .bytecode
+        .into_iter()
+        .map(Into::<Felt252>::into)
+        .map(Into::<MaybeRelocatable>::into)
         .collect();
 
     let program = if cairo_run_config.proof_mode {
@@ -248,6 +255,7 @@ pub fn cairo_run_program(
     let mut runner = CairoRunner::new_v2(
         &program,
         cairo_run_config.layout,
+        cairo_run_config.dynamic_layout_params.clone(),
         runner_mode,
         cairo_run_config.trace_enabled,
     )?;
@@ -363,6 +371,8 @@ fn build_hints_vec<'b>(
     (hints, program_hints)
 }
 
+// Function derived from the cairo-lang-runner crate.
+// https://github.com/starkware-libs/cairo/blob/40a7b60687682238f7f71ef7c59c986cc5733915/crates/cairo-lang-runner/src/lib.rs#L551-L552
 /// Finds first function ending with `name_suffix`.
 fn find_function<'a>(
     sierra_program: &'a SierraProgram,
@@ -381,6 +391,8 @@ fn find_function<'a>(
         .ok_or_else(|| RunnerError::MissingMain)
 }
 
+// Function derived from the cairo-lang-runner crate.
+// https://github.com/starkware-libs/cairo/blob/40a7b60687682238f7f71ef7c59c986cc5733915/crates/cairo-lang-runner/src/lib.rs#L750
 /// Creates a list of instructions that will be appended to the program's bytecode.
 fn create_code_footer() -> Vec<Instruction> {
     casm! {
@@ -524,6 +536,8 @@ fn load_arguments(
     Ok(())
 }
 
+// Function derived from the cairo-lang-runner crate.
+// https://github.com/starkware-libs/cairo/blob/40a7b60687682238f7f71ef7c59c986cc5733915/crates/cairo-lang-runner/src/lib.rs#L703
 /// Returns the instructions to add to the beginning of the code to successfully call the main
 /// function, as well as the builtins required to execute the program.
 fn create_entry_code(
@@ -657,6 +671,9 @@ fn create_entry_code(
         BuiltinName::ec_op => builtin_vars[&EcOpType::ID],
         BuiltinName::poseidon => builtin_vars[&PoseidonType::ID],
         BuiltinName::segment_arena => builtin_vars[&SegmentArenaType::ID],
+        BuiltinName::add_mod => builtin_vars[&AddModType::ID],
+        BuiltinName::mul_mod => builtin_vars[&MulModType::ID],
+        BuiltinName::range_check96 => builtin_vars[&RangeCheck96Type::ID],
         _ => unreachable!(),
     };
     if copy_to_output_builtin {
@@ -866,6 +883,8 @@ fn create_entry_code(
     ))
 }
 
+// Function derived from the cairo-lang-runner crate.
+// https://github.com/starkware-libs/cairo/blob/40a7b60687682238f7f71ef7c59c986cc5733915/crates/cairo-lang-runner/src/lib.rs#L577
 fn get_info<'a>(
     sierra_program_registry: &'a ProgramRegistry<CoreType, CoreLibfunc>,
     ty: &'a cairo_lang_sierra::ids::ConcreteTypeId,
@@ -887,6 +906,13 @@ fn get_function_builtins(
     let mut builtin_offset: HashMap<cairo_lang_sierra::ids::GenericTypeId, i16> = HashMap::new();
     let mut current_offset = 3;
     for (debug_name, builtin_name, sierra_id) in [
+        ("MulMod", BuiltinName::mul_mod, MulModType::ID),
+        ("AddMod", BuiltinName::add_mod, AddModType::ID),
+        (
+            "RangeCheck96",
+            BuiltinName::range_check96,
+            RangeCheck96Type::ID,
+        ),
         ("Poseidon", BuiltinName::poseidon, PoseidonType::ID),
         ("EcOp", BuiltinName::ec_op, EcOpType::ID),
         ("Bitwise", BuiltinName::bitwise, BitwiseType::ID),
@@ -947,8 +973,11 @@ fn is_implicit_generic_id(generic_ty: &GenericTypeId) -> bool {
         PedersenType::ID,
         PoseidonType::ID,
         RangeCheckType::ID,
+        RangeCheck96Type::ID,
         SegmentArenaType::ID,
         SystemType::ID,
+        MulModType::ID,
+        AddModType::ID,
     ]
     .contains(generic_ty)
 }
@@ -1143,6 +1172,9 @@ fn finalize_builtins(
                 "Pedersen" => BuiltinName::pedersen,
                 "Output" => BuiltinName::output,
                 "Ecdsa" => BuiltinName::ecdsa,
+                "AddMod" => BuiltinName::add_mod,
+                "MulMod" => BuiltinName::mul_mod,
+                "RangeCheck96" => BuiltinName::range_check96,
                 _ => {
                     stack_pointer.offset += size as usize;
                     continue;
@@ -1231,7 +1263,7 @@ fn serialize_output_inner<'a>(
                 .expect("Missing return value")
                 .get_relocatable()
                 .expect("Box Pointer is not Relocatable");
-            let type_size = type_sizes[&info.ty].try_into().expect("could not parse to usize"); 
+            let type_size = type_sizes[&info.ty].try_into().expect("could not parse to usize");
             let data = vm
                 .get_continuous_range(ptr, type_size)
                 .expect("Failed to extract value from nullable ptr");

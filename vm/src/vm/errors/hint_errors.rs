@@ -154,6 +154,8 @@ pub enum HintError {
     BigintToU32Fail,
     #[error("BigInt to BigUint failed, BigInt is negative")]
     BigIntToBigUintFail,
+    #[error("BigUint to BigInt failed")]
+    BigUintToBigIntFail,
     #[error("Assertion failed, 0 <= ids.a % PRIME < range_check_builtin.bound \n a = {0} is out of range")]
     ValueOutOfRange(Box<Felt252>),
     #[error("Assertion failed, 0 <= ids.a % PRIME < range_check_builtin.bound \n a = {0} is out of range")]
@@ -190,6 +192,10 @@ pub enum HintError {
     ExcessBalanceKeyError(Box<str>),
     #[error("excess_balance_func: Failed to calculate {0}")]
     ExcessBalanceCalculationFailed(Box<str>),
+    #[error("generate_nibbles fail: tried to read from an empty list of nibbles")]
+    EmptyNibbles,
+    #[error("circuit evalution: {0}")]
+    CircuitEvaluationFailed(Box<str>),
 }
 
 #[cfg(test)]

@@ -47,7 +47,7 @@ pub use bitwise::BitwiseBuiltinRunner;
 pub use ec_op::EcOpBuiltinRunner;
 pub use hash::HashBuiltinRunner;
 pub use modulo::ModBuiltinRunner;
-use num_integer::div_floor;
+use num_integer::{div_ceil, div_floor};
 pub use output::{OutputBuiltinRunner, OutputBuiltinState};
 pub use poseidon::PoseidonBuiltinRunner;
 pub use range_check::RangeCheckBuiltinRunner;
@@ -171,6 +171,14 @@ impl BuiltinRunner {
         &self,
         vm: &VirtualMachine,
     ) -> Result<usize, memory_errors::MemoryError> {
+        Ok(self.get_allocated_instances(vm)? * self.cells_per_instance() as usize)
+    }
+
+    ///Returns the builtin's allocated instances
+    pub fn get_allocated_instances(
+        &self,
+        vm: &VirtualMachine,
+    ) -> Result<usize, memory_errors::MemoryError> {
         match *self {
             BuiltinRunner::Output(_) | BuiltinRunner::SegmentArena(_) => Ok(0),
             _ => {
@@ -179,23 +187,40 @@ impl BuiltinRunner {
                         // Dynamic layout has the exact number of instances it needs (up to a power of 2).
                         let instances: usize =
                             self.get_used_cells(&vm.segments)? / self.cells_per_instance() as usize;
-                        let components = (instances / self.instances_per_component() as usize)
-                            .next_power_of_two();
-                        Ok(self.cells_per_instance() as usize
-                            * self.instances_per_component() as usize
-                            * components)
+                        let needed_components = instances / self.instances_per_component() as usize;
+
+                        let components = if needed_components > 0 {
+                            needed_components.next_power_of_two()
+                        } else {
+                            0
+                        };
+                        Ok(self.instances_per_component() as usize * components)
                     }
+                    // Dynamic layout allows for builtins with ratio 0
+                    Some(0) => Ok(0),
                     Some(ratio) => {
-                        let min_step = (ratio * self.instances_per_component()) as usize;
+                        let min_step_num = (ratio * self.instances_per_component()) as usize;
+                        let min_step = if let Some(ratio_den) = self.ratio_den() {
+                            div_ceil(min_step_num, ratio_den as usize)
+                        } else {
+                            min_step_num
+                        };
+
                         if vm.current_step < min_step {
                             return Err(InsufficientAllocatedCellsError::MinStepNotReached(
                                 Box::new((min_step, self.name())),
                             )
                             .into());
                         };
-                        let value = safe_div_usize(vm.current_step, ratio as usize)
-                            .map_err(|_| MemoryError::ErrorCalculatingMemoryUnits)?;
-                        Ok(self.cells_per_instance() as usize * value)
+
+                        let allocated_instances = if let Some(ratio_den) = self.ratio_den() {
+                            safe_div_usize(vm.current_step * ratio_den as usize, ratio as usize)
+                                .map_err(|_| MemoryError::ErrorCalculatingMemoryUnits)?
+                        } else {
+                            safe_div_usize(vm.current_step, ratio as usize)
+                                .map_err(|_| MemoryError::ErrorCalculatingMemoryUnits)?
+                        };
+                        Ok(allocated_instances)
                     }
                 }
             }
@@ -249,6 +274,15 @@ impl BuiltinRunner {
             BuiltinRunner::Signature(ref signature) => signature.ratio(),
             BuiltinRunner::Poseidon(poseidon) => poseidon.ratio(),
             BuiltinRunner::Mod(ref modulo) => modulo.ratio(),
+        }
+    }
+
+    pub fn ratio_den(&self) -> Option<u32> {
+        match self {
+            BuiltinRunner::RangeCheck(range_check) => range_check.ratio_den(),
+            BuiltinRunner::RangeCheck96(range_check) => range_check.ratio_den(),
+            BuiltinRunner::Mod(modulo) => modulo.ratio_den(),
+            _ => None,
         }
     }
 
@@ -662,6 +696,8 @@ mod tests {
     use crate::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::BuiltinHintProcessor;
     use crate::relocatable;
     use crate::types::builtin_name::BuiltinName;
+    use crate::types::instance_definitions::mod_instance_def::ModInstanceDef;
+    use crate::types::instance_definitions::LowRatio;
     use crate::types::program::Program;
     use crate::utils::test_utils::*;
     use crate::vm::errors::memory_errors::InsufficientAllocatedCellsError;
@@ -1051,6 +1087,26 @@ mod tests {
         let mut vm = vm!();
         vm.current_step = 32768;
         assert_eq!(builtin.get_allocated_memory_units(&vm), Ok(256));
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn get_allocated_memory_units_zero_ratio() {
+        let builtin = BuiltinRunner::Keccak(KeccakBuiltinRunner::new(Some(0), true));
+        let vm = vm!();
+        assert_eq!(builtin.get_allocated_memory_units(&vm), Ok(0));
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn get_allocated_memory_units_none_ratio() {
+        let mut builtin = BuiltinRunner::Keccak(KeccakBuiltinRunner::new(None, true));
+        let mut vm = vm!();
+
+        builtin.initialize_segments(&mut vm.segments);
+        vm.compute_segments_effective_sizes();
+
+        assert_eq!(builtin.get_allocated_memory_units(&vm), Ok(0));
     }
 
     #[test]
@@ -1541,6 +1597,30 @@ mod tests {
         assert_eq!(range_check_builtin.ratio(), (Some(8)),);
         let keccak_builtin: BuiltinRunner = KeccakBuiltinRunner::new(Some(2048), true).into();
         assert_eq!(keccak_builtin.ratio(), (Some(2048)),);
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn get_ratio_den_tests() {
+        let rangecheck_builtin: BuiltinRunner =
+            RangeCheckBuiltinRunner::<RC_N_PARTS_STANDARD>::new_with_low_ratio(
+                Some(LowRatio::new(1, 2)),
+                true,
+            )
+            .into();
+        assert_eq!(rangecheck_builtin.ratio_den(), (Some(2)),);
+
+        let rangecheck96_builtin: BuiltinRunner =
+            RangeCheckBuiltinRunner::<RC_N_PARTS_96>::new_with_low_ratio(
+                Some(LowRatio::new(1, 4)),
+                true,
+            )
+            .into();
+        assert_eq!(rangecheck96_builtin.ratio_den(), (Some(4)),);
+
+        let mod_builtin: BuiltinRunner =
+            ModBuiltinRunner::new_add_mod(&ModInstanceDef::new(Some(5), 3, 3), true).into();
+        assert_eq!(mod_builtin.ratio_den(), (Some(1)),);
     }
 
     #[test]

@@ -67,14 +67,14 @@ jobs:
     steps:
       - name: Populate cache
         uses: actions/cache@v3
-        id: cache 
+        id: cache
         with:
           path: bin/cairo-vm-cli-${{ matrix.branch }}
           key: binary-${{ github.event.pull_request[matrix.branch].sha }}
 
       - name: Install Rust
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-        uses: dtolnay/rust-toolchain@1.80.0
+        uses: dtolnay/rust-toolchain@1.81.0
 
       - name: Checkout
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}

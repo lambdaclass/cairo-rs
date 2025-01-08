@@ -13,7 +13,7 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v2
     - name: Install stable toolchain
-      uses: dtolnay/rust-toolchain@1.80.0
+      uses: dtolnay/rust-toolchain@1.81.0
     - name: Publish crate cairo-vm
       env:
           CRATES_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

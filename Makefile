@@ -90,6 +90,14 @@ BAD_TEST_DIR=cairo_programs/bad_programs
 BAD_TEST_FILES:=$(wildcard $(BAD_TEST_DIR)/*.cairo)
 COMPILED_BAD_TESTS:=$(patsubst $(BAD_TEST_DIR)/%.cairo, $(BAD_TEST_DIR)/%.json, $(BAD_TEST_FILES))
 
+SECP_CAIRO0_HINTS_DIR=cairo_programs/cairo-0-secp-hints-feature
+SECP_CAIRO0_HINTS_FILES:=$(wildcard $(SECP_CAIRO0_HINTS_DIR)/*.cairo)
+COMPILED_SECP_CAIRO0_HINTS:=$(patsubst $(SECP_CAIRO0_HINTS_DIR)/%.cairo, $(SECP_CAIRO0_HINTS_DIR)/%.json, $(SECP_CAIRO0_HINTS_FILES))
+
+KZG_DA_CAIRO0_HINTS_DIR=cairo_programs/cairo-0-kzg-da-hints
+KZG_DA_CAIRO0_HINTS_FILES:=$(wildcard $(KZG_DA_CAIRO0_HINTS_DIR)/*.cairo)
+COMPILED_KZG_DA_CAIRO0_HINTS:=$(patsubst $(KZG_DA_CAIRO0_HINTS_DIR)/%.cairo, $(KZG_DA_CAIRO0_HINTS_DIR)/%.json, $(KZG_DA_CAIRO0_HINTS_FILES))
+
 PRINT_TEST_DIR=cairo_programs/print_feature
 PRINT_TEST_FILES:=$(wildcard $(PRINT_TEST_DIR)/*.cairo)
 COMPILED_PRINT_TESTS:=$(patsubst $(PRINT_TEST_DIR)/%.cairo, $(PRINT_TEST_DIR)/%.json, $(PRINT_TEST_FILES))
@@ -180,7 +188,7 @@ $(CAIRO_2_CONTRACTS_TEST_DIR)/%.casm: $(CAIRO_2_CONTRACTS_TEST_DIR)/%.sierra
 # ======================
 
 CAIRO_2_REPO_DIR = cairo2
-CAIRO_2_VERSION = 2.8.0
+CAIRO_2_VERSION = 2.10.0-rc.0
 
 build-cairo-2-compiler-macos:
 	@if [ ! -d "$(CAIRO_2_REPO_DIR)" ]; then \
@@ -239,7 +247,7 @@ run:
 check:
 	cargo check
 
-cairo_test_programs: $(COMPILED_TESTS) $(COMPILED_BAD_TESTS) $(COMPILED_NORETROCOMPAT_TESTS) $(COMPILED_PRINT_TESTS) $(COMPILED_MOD_BUILTIN_TESTS)
+cairo_test_programs: $(COMPILED_TESTS) $(COMPILED_BAD_TESTS) $(COMPILED_NORETROCOMPAT_TESTS) $(COMPILED_PRINT_TESTS) $(COMPILED_MOD_BUILTIN_TESTS) $(COMPILED_SECP_CAIRO0_HINTS) $(COMPILED_KZG_DA_CAIRO0_HINTS)
 cairo_proof_programs: $(COMPILED_PROOF_TESTS) $(COMPILED_MOD_BUILTIN_PROOF_TESTS)
 cairo_bench_programs: $(COMPILED_BENCHES)
 cairo_1_test_contracts: $(CAIRO_1_COMPILED_CASM_CONTRACTS)
@@ -264,7 +272,7 @@ test-wasm: cairo_proof_programs cairo_test_programs
 	# NOTE: release mode is needed to avoid "too many locals" error
 	wasm-pack test --release --node vm --no-default-features
 test-extensive_hints: cairo_proof_programs cairo_test_programs
-	$(TEST_COMMAND) --workspace --features "test_utils, cairo-1-hints, extensive_hints"
+	$(TEST_COMMAND) --workspace --features "test_utils, cairo-1-hints, cairo-0-secp-hints, cairo-0-data-availability-hints, extensive_hints"
 
 check-fmt:
 	cargo fmt --all -- --check
@@ -344,6 +352,8 @@ clean:
 	rm -f $(TEST_DIR)/*.pie
 	rm -f $(BENCH_DIR)/*.json
 	rm -f $(BAD_TEST_DIR)/*.json
+	rm -f $(SECP_CAIRO0_HINTS_DIR)/*.json
+	rm -f $(KZG_DA_CAIRO0_HINTS_DIR)/*.json
 	rm -f $(PRINT_TEST_DIR)/*.json
 	rm -f $(CAIRO_1_CONTRACTS_TEST_DIR)/*.sierra
 	rm -f $(CAIRO_1_CONTRACTS_TEST_DIR)/*.casm

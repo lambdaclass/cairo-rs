@@ -3,7 +3,6 @@ use crate::math_utils::div_mod;
 use crate::stdlib::{cell::RefCell, collections::HashMap, prelude::*, rc::Rc};
 
 use crate::types::builtin_name::BuiltinName;
-use crate::types::errors::math_errors::MathError;
 use crate::types::instance_definitions::ecdsa_instance_def::CELLS_PER_SIGNATURE;
 use crate::vm::errors::runner_errors::RunnerError;
 use crate::vm::runners::cairo_pie::BuiltinAdditionalData;
@@ -22,7 +21,7 @@ use lazy_static::lazy_static;
 use num_bigint::{BigInt, Sign};
 use num_integer::div_ceil;
 use num_traits::{Num, One};
-use starknet_crypto::{verify, FieldElement, Signature};
+use starknet_crypto::{verify, Signature};
 
 lazy_static! {
     static ref EC_ORDER: BigInt = BigInt::from_str_radix(
@@ -60,8 +59,8 @@ impl SignatureBuiltinRunner {
         let r_be_bytes = r.to_bytes_be();
         let s_be_bytes = s.to_bytes_be();
         let (r_felt, s_felt) = (
-            FieldElement::from_bytes_be(&r_be_bytes).map_err(|_| MathError::ByteConversionError)?,
-            FieldElement::from_bytes_be(&s_be_bytes).map_err(|_| MathError::ByteConversionError)?,
+            Felt252::from_bytes_be(&r_be_bytes),
+            Felt252::from_bytes_be(&s_be_bytes),
         );
 
         let signature = Signature {
@@ -127,11 +126,9 @@ impl SignatureBuiltinRunner {
                     .get(&pubkey_addr)
                     .ok_or_else(|| MemoryError::SignatureNotFound(Box::new(pubkey_addr)))?;
 
-                let public_key = FieldElement::from_bytes_be(&pubkey.to_bytes_be())
-                    .map_err(|_| MathError::ByteConversionError)?;
+                let public_key = Felt252::from_bytes_be(&pubkey.to_bytes_be());
                 let (r, s) = (signature.r, signature.s);
-                let message = FieldElement::from_bytes_be(&msg.to_bytes_be())
-                    .map_err(|_| MathError::ByteConversionError)?;
+                let message = Felt252::from_bytes_be(&msg.to_bytes_be());
                 match verify(&public_key, &message, &r, &s) {
                     Ok(true) => Ok(vec![]),
                     _ => Err(MemoryError::InvalidSignature(Box::new((
@@ -198,10 +195,8 @@ impl SignatureBuiltinRunner {
             self.signatures.borrow_mut().insert(
                 *addr,
                 Signature {
-                    r: FieldElement::from_bytes_be(&r.to_bytes_be())
-                        .map_err(|_| MathError::ByteConversionError)?,
-                    s: FieldElement::from_bytes_be(&s.to_bytes_be())
-                        .map_err(|_| MathError::ByteConversionError)?,
+                    r: Felt252::from_bytes_be(&r.to_bytes_be()),
+                    s: Felt252::from_bytes_be(&s.to_bytes_be()),
                 },
             );
         }
@@ -210,7 +205,17 @@ impl SignatureBuiltinRunner {
 
     pub fn air_private_input(&self, memory: &Memory) -> Vec<PrivateInput> {
         let mut private_inputs = vec![];
-        for (addr, signature) in self.signatures.borrow().iter() {
+
+        // Collect and sort the signatures by their index before the loop
+        let binding = self.signatures.borrow();
+        let mut sorted_signatures: Vec<_> = binding.iter().collect();
+        sorted_signatures.sort_by_key(|(addr, _)| {
+            addr.offset
+                .checked_div(CELLS_PER_SIGNATURE as usize)
+                .unwrap_or_default()
+        });
+
+        for (addr, signature) in sorted_signatures {
             if let (Ok(pubkey), Some(msg)) = (
                 memory.get_integer(*addr),
                 (*addr + 1_usize)
@@ -513,8 +518,8 @@ mod tests {
         let signatures = HashMap::from([(
             Relocatable::from((4, 0)),
             Signature {
-                r: FieldElement::from_dec_str("45678").unwrap(),
-                s: FieldElement::from_dec_str("1239").unwrap(),
+                r: Felt252::from_dec_str("45678").unwrap(),
+                s: Felt252::from_dec_str("1239").unwrap(),
             },
         )]);
         builtin.signatures = Rc::new(RefCell::new(signatures));
@@ -534,8 +539,8 @@ mod tests {
         let signatures = HashMap::from([(
             Relocatable::from((0, 0)),
             Signature {
-                r: FieldElement::from_dec_str("45678").unwrap(),
-                s: FieldElement::from_dec_str("1239").unwrap(),
+                r: Felt252::from_dec_str("45678").unwrap(),
+                s: Felt252::from_dec_str("1239").unwrap(),
             },
         )]);
         builtin_a.signatures = Rc::new(RefCell::new(signatures));
@@ -553,5 +558,68 @@ mod tests {
             assert_eq!(signature_a.r, signature_b.r);
             assert_eq!(signature_a.s, signature_b.s);
         }
+    }
+    #[test]
+    fn get_air_private_input() {
+        let mut builtin = SignatureBuiltinRunner::new(Some(512), true);
+
+        builtin.base = 0;
+
+        let signature1_r = Felt252::from(1234);
+        let signature1_s = Felt252::from(5678);
+        let signature2_r = Felt252::from(8765);
+        let signature2_s = Felt252::from(4321);
+
+        let sig1_addr = Relocatable::from((builtin.base as isize, 0));
+        let sig2_addr = Relocatable::from((builtin.base as isize, CELLS_PER_SIGNATURE as usize));
+
+        builtin
+            .add_signature(sig1_addr, &(signature1_r, signature1_s))
+            .unwrap();
+        builtin
+            .add_signature(sig2_addr, &(signature2_r, signature2_s))
+            .unwrap();
+
+        let pubkey1 = Felt252::from(1111);
+        let msg1 = Felt252::from(2222);
+        let pubkey2 = Felt252::from(3333);
+        let msg2 = Felt252::from(4444);
+
+        let segments = segments![
+            ((0, 0), 1111),
+            ((0, 1), 2222),
+            ((0, 2), 3333),
+            ((0, 3), 4444)
+        ];
+        let w1 =
+            Felt252::from(&div_mod(&BigInt::one(), &signature1_s.to_bigint(), &EC_ORDER).unwrap());
+
+        let w2 =
+            Felt252::from(&div_mod(&BigInt::one(), &signature2_s.to_bigint(), &EC_ORDER).unwrap());
+
+        let expected_private_inputs = vec![
+            PrivateInput::Signature(PrivateInputSignature {
+                index: 0,
+                pubkey: pubkey1,
+                msg: msg1,
+                signature_input: SignatureInput {
+                    r: signature1_r,
+                    w: w1,
+                },
+            }),
+            PrivateInput::Signature(PrivateInputSignature {
+                index: 1,
+                pubkey: pubkey2,
+                msg: msg2,
+                signature_input: SignatureInput {
+                    r: signature2_r,
+                    w: w2,
+                },
+            }),
+        ];
+
+        let private_inputs = builtin.air_private_input(&segments.memory);
+
+        assert_eq!(private_inputs, expected_private_inputs);
     }
 }

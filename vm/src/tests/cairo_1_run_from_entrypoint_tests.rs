@@ -39,7 +39,7 @@ fn test_uint256_div_mod_hint() {
 
     run_cairo_1_entrypoint(
         program_data.as_slice(),
-        208,
+        219,
         &[36_usize.into(), 2_usize.into()],
         &[Felt252::from(18_usize)],
     );

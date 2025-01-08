@@ -12,9 +12,9 @@ keywords.workspace = true
 cairo-vm = { workspace = true, features = ["std", "cairo-1-hints", "clap"] }
 serde_json = { workspace = true }
 
-cairo-lang-sierra-type-size = { version = "2.8.0", default-features = false }
-cairo-lang-sierra-ap-change = { version = "2.8.0", default-features = false }
-cairo-lang-sierra-gas = { version = "2.8.0", default-features = false }
+cairo-lang-sierra-type-size = { version = "2.10.0-rc.0", default-features = false }
+cairo-lang-sierra-ap-change = { version = "2.10.0-rc.0", default-features = false }
+cairo-lang-sierra-gas = { version = "2.10.0-rc.0", default-features = false }
 cairo-lang-starknet-classes.workspace = true
 cairo-lang-sierra-to-casm.workspace = true
 cairo-lang-compiler.workspace = true
@@ -34,3 +34,4 @@ num-bigint.workspace = true
 [features]
 default = ["with_mimalloc"]
 with_mimalloc = ["dep:mimalloc"]
+mod_builtin = ["cairo-vm/mod_builtin"]

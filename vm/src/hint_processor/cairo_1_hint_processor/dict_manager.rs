@@ -1,3 +1,6 @@
+// Most of the structs and implementations of these Dictionaries are based on the `cairo-lang-runner` crate.
+// Reference: https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-runner/src/casm_run/dict_manager.rs
+
 use num_traits::One;
 
 use crate::stdlib::collections::HashMap;
@@ -140,7 +143,7 @@ impl DictManagerExecScope {
                             .into_boxed_str(),
                     ));
                 }
-                vm.add_relocation_rule(tracker.start, prev_end)?;
+                vm.add_relocation_rule(tracker.start, prev_end.into())?;
                 prev_end += (tracker.end.unwrap_or_default() - tracker.start)?;
                 prev_end += 1;
             }

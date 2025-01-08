@@ -113,6 +113,7 @@ fn run_cairo_1_entrypoint(
     let mut runner = CairoRunner::new(
         &(contract_class.clone().try_into().unwrap()),
         LayoutName::all_cairo,
+        None,
         false,
         false,
     )
@@ -217,6 +218,7 @@ fn run_cairo_1_entrypoint_with_run_resources(
     let mut runner = CairoRunner::new(
         &(contract_class.clone().try_into().unwrap()),
         LayoutName::all_cairo,
+        None,
         false,
         false,
     )

@@ -29,6 +29,8 @@ cairo-1-hints = [
 ]
 tracer = []
 mod_builtin = []
+cairo-0-secp-hints = []
+cairo-0-data-availability-hints = []
 
 # Note that these features are not retro-compatible with the cairo Python VM.
 test_utils = ["std", "dep:arbitrary", "starknet-types-core/arbitrary", "starknet-types-core/std"] # This feature will reference every test-oriented feature
@@ -89,6 +91,8 @@ num-prime = { version = "0.4.3", features = ["big-int"] }
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 wasm-bindgen-test = "0.3.34"
+# The js feature needs to be enabled
+getrandom = { version = "0.2", features = ["js"]}
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 iai-callgrind = "0.3.1"

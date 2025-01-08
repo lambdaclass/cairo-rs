@@ -1,4 +1,4 @@
-use starknet_crypto::{pedersen_hash, FieldElement};
+use starknet_crypto::pedersen_hash;
 
 use crate::Felt252;
 
@@ -7,7 +7,7 @@ use crate::types::builtin_name::BuiltinName;
 use crate::types::relocatable::MaybeRelocatable;
 use crate::vm::runners::cairo_pie::StrippedProgram;
 
-type HashFunction = fn(&FieldElement, &FieldElement) -> FieldElement;
+type HashFunction = fn(&Felt252, &Felt252) -> Felt252;
 
 #[derive(thiserror_no_std::Error, Debug)]
 pub enum HashChainError {
@@ -27,23 +27,15 @@ pub enum ProgramHashError {
 
     #[error("Invalid program data: data contains relocatable(s)")]
     InvalidProgramData,
-
-    /// Conversion from Felt252 to FieldElement failed. This is unlikely to happen
-    /// unless the implementation of Felt252 changes and this code is not updated properly.
-    #[error("Conversion from Felt252 to FieldElement failed")]
-    Felt252ToFieldElementConversionFailed,
 }
 
 /// Computes a hash chain over the data, in the following order:
 ///     h(data[0], h(data[1], h(..., h(data[n-2], data[n-1])))).
 /// [cairo_lang reference](https://github.com/starkware-libs/cairo-lang/blob/efa9648f57568aad8f8a13fbf027d2de7c63c2c0/src/starkware/cairo/common/hash_chain.py#L6)
 
-fn compute_hash_chain<'a, I>(
-    data: I,
-    hash_func: HashFunction,
-) -> Result<FieldElement, HashChainError>
+fn compute_hash_chain<'a, I>(data: I, hash_func: HashFunction) -> Result<Felt252, HashChainError>
 where
-    I: Iterator<Item = &'a FieldElement> + DoubleEndedIterator,
+    I: Iterator<Item = &'a Felt252> + DoubleEndedIterator,
 {
     match data.copied().rev().reduce(|x, y| hash_func(&y, &x)) {
         Some(result) => Ok(result),
@@ -51,37 +43,27 @@ where
     }
 }
 
-/// Creates an instance of `FieldElement` from a builtin name.
+/// Creates an instance of `Felt252` from a builtin name.
 ///
 /// Converts the builtin name to bytes then attempts to create a field element from
 /// these bytes. This function will fail if the builtin name is over 31 characters.
-fn builtin_name_to_field_element(
-    builtin_name: &BuiltinName,
-) -> Result<FieldElement, ProgramHashError> {
+fn builtin_name_to_field_element(builtin_name: &BuiltinName) -> Result<Felt252, ProgramHashError> {
     // The Python implementation uses the builtin name without suffix
-    FieldElement::from_byte_slice_be(builtin_name.to_str().as_bytes())
-        .map_err(|_| ProgramHashError::InvalidProgramBuiltin(builtin_name.to_str()))
+    Ok(Felt252::from_bytes_be_slice(
+        builtin_name.to_str().as_bytes(),
+    ))
 }
 
-/// The `value: FieldElement` is `pub(crate)` and there is no accessor.
-/// This function converts a `Felt252` to a `FieldElement` using a safe, albeit inefficient,
-/// method.
-fn felt_to_field_element(felt: &Felt252) -> Result<FieldElement, ProgramHashError> {
-    let bytes = felt.to_bytes_be();
-    FieldElement::from_bytes_be(&bytes)
-        .map_err(|_e| ProgramHashError::Felt252ToFieldElementConversionFailed)
-}
-
-/// Converts a `MaybeRelocatable` into a `FieldElement` value.
+/// Converts a `MaybeRelocatable` into a `Felt252` value.
 ///
 /// Returns `InvalidProgramData` if `maybe_relocatable` is not an integer
 fn maybe_relocatable_to_field_element(
     maybe_relocatable: &MaybeRelocatable,
-) -> Result<FieldElement, ProgramHashError> {
-    let felt = maybe_relocatable
+) -> Result<Felt252, ProgramHashError> {
+    maybe_relocatable
         .get_int_ref()
-        .ok_or(ProgramHashError::InvalidProgramData)?;
-    felt_to_field_element(felt)
+        .copied()
+        .ok_or(ProgramHashError::InvalidProgramData)
 }
 
 /// Computes the Pedersen hash of a program.
@@ -89,12 +71,12 @@ fn maybe_relocatable_to_field_element(
 pub fn compute_program_hash_chain(
     program: &StrippedProgram,
     bootloader_version: usize,
-) -> Result<FieldElement, ProgramHashError> {
+) -> Result<Felt252, ProgramHashError> {
     let program_main = program.main;
-    let program_main = FieldElement::from(program_main);
+    let program_main = Felt252::from(program_main);
 
     // Convert builtin names to field elements
-    let builtin_list: Result<Vec<FieldElement>, _> = program
+    let builtin_list: Result<Vec<Felt252>, _> = program
         .builtins
         .iter()
         .map(builtin_name_to_field_element)
@@ -102,9 +84,9 @@ pub fn compute_program_hash_chain(
     let builtin_list = builtin_list?;
 
     let program_header = vec![
-        FieldElement::from(bootloader_version),
+        Felt252::from(bootloader_version),
         program_main,
-        FieldElement::from(program.builtins.len()),
+        Felt252::from(program.builtins.len()),
     ];
 
     let program_data: Result<Vec<_>, _> = program
@@ -115,7 +97,7 @@ pub fn compute_program_hash_chain(
     let program_data = program_data?;
 
     let data_chain_len = program_header.len() + builtin_list.len() + program_data.len();
-    let data_chain_len_vec = vec![FieldElement::from(data_chain_len)];
+    let data_chain_len_vec = vec![Felt252::from(data_chain_len)];
 
     // Prepare a chain of iterators to feed to the hash function
     let data_chain = [
@@ -140,14 +122,14 @@ mod tests {
 
     #[test]
     fn test_compute_hash_chain() {
-        let data: Vec<FieldElement> = vec![
-            FieldElement::from(1u64),
-            FieldElement::from(2u64),
-            FieldElement::from(3u64),
+        let data: Vec<Felt252> = vec![
+            Felt252::from(1u64),
+            Felt252::from(2u64),
+            Felt252::from(3u64),
         ];
         let expected_hash = pedersen_hash(
-            &FieldElement::from(1u64),
-            &pedersen_hash(&FieldElement::from(2u64), &FieldElement::from(3u64)),
+            &Felt252::from(1u64),
+            &pedersen_hash(&Felt252::from(2u64), &Felt252::from(3u64)),
         );
         let computed_hash = compute_hash_chain(data.iter(), pedersen_hash)
             .expect("Hash computation failed unexpectedly");
