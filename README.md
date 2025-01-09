@@ -65,7 +65,7 @@ This repository contains the newer version, written in Rust. It's faster and has
 
 ### The Cairo language
 
-Cairo is the first production-grade platform for generating [STARK](https://vitalik.ca/general/2017/11/09/starks_part_1.html) proofs for general computation.
+Cairo is the first production-grade platform for generating [STARK](https://vitalik.eth.limo/general/2017/11/09/starks_part_1.html) proofs for general computation.
 
 It's Turing-complete and it was created by [Starkware](https://starkware.co/) as part of the [Starknet](https://starkware.co/starknet/) ecosystem.
 
@@ -376,7 +376,7 @@ This is a list of recommended books to learn how to implement a compiler or an i
 #### ZK SNARKs
 
 - [What are zk-SNARKs?](https://z.cash/technology/zksnarks/)
-- [Vitalik's introduction to how zk-SNARKs are possible](https://vitalik.ca/general/2021/01/26/snarks.html)
+- [Vitalik's introduction to how zk-SNARKs are possible](https://vitalik.eth.limo/general/2021/01/26/snarks.html)
 - [Vitalik's post on quadratic arithmetic programs](https://medium.com/@VitalikButerin/quadratic-arithmetic-programs-from-zero-to-hero-f6d558cea649)
 - [Why and How zk-SNARK Works - Maksym Petkus](https://arxiv.org/abs/1906.07221)
 - [Comparing General Purpose zk-SNARKs](https://medium.com/coinmonks/comparing-general-purpose-zk-snarks-51ce124c60bd)
@@ -396,9 +396,9 @@ Introduction:
 
 Vitalik Buterin's blog series on zk-STARKs:
 
-- [STARKs, part 1: Proofs with Polynomials](https://vitalik.ca/general/2017/11/09/starks_part_1.html)
-- [STARKs, part 2: Thank Goodness it's FRI-day](https://vitalik.ca/general/2017/11/22/starks_part_2.html)
-- [STARKs, part 3: Into the Weeds](https://vitalik.ca/general/2018/07/21/starks_part_3.html)
+- [STARKs, part 1: Proofs with Polynomials](https://vitalik.eth.limo/general/2017/11/09/starks_part_1.html)
+- [STARKs, part 2: Thank Goodness it's FRI-day](https://vitalik.eth.limo/general/2017/11/22/starks_part_2.html)
+- [STARKs, part 3: Into the Weeds](https://vitalik.eth.limo/general/2018/07/21/starks_part_3.html)
 
 Alan Szepieniec's STARK tutorial:
 
