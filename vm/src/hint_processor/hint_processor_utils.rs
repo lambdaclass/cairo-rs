@@ -328,6 +328,24 @@ mod tests {
 
     #[test]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn tracking_correction_invalid_offset() {
+        let mut ref_ap_tracking = ApTracking::new();
+        ref_ap_tracking.group = 1;
+        ref_ap_tracking.offset = 5;
+        let mut hint_ap_tracking = ApTracking::new();
+        hint_ap_tracking.group = 2;
+        hint_ap_tracking.offset = 10;
+
+        assert!(apply_ap_tracking_correction(
+            relocatable!(1, 0),
+            &ref_ap_tracking,
+            &hint_ap_tracking
+        )
+        .is_none());
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
     fn get_maybe_relocatable_from_reference_valid() {
         let mut vm = vm!();
         vm.segments = segments![((1, 0), (0, 0))];

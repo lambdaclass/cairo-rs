@@ -52,7 +52,7 @@ use crate::{
             },
             ec_utils::{chained_ec_op_random_ec_point_hint, random_ec_point_hint, recover_y_hint},
             find_element_hint::{find_element, search_sorted_lower},
-            garaga::get_felt_bitlenght,
+            garaga::get_felt_bitlength,
             hint_code,
             keccak_utils::{
                 split_input, split_n_bytes, split_output, split_output_mid_low_high, unsafe_keccak,
@@ -473,7 +473,7 @@ impl HintProcessorLogic for BuiltinHintProcessor {
                 &hint_data.ap_tracking,
             ),
             hint_code::GET_FELT_BIT_LENGTH => {
-                get_felt_bitlenght(vm, &hint_data.ids_data, &hint_data.ap_tracking)
+                get_felt_bitlength(vm, &hint_data.ids_data, &hint_data.ap_tracking)
             }
             hint_code::BIGINT_PACK_DIV_MOD => bigint_pack_div_mod_hint(
                 vm,

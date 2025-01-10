@@ -14,7 +14,7 @@ use super::hint_utils::{get_integer_from_var_name, insert_value_from_var_name};
 /// x = ids.x,
 /// ids.bit_length = x.bit_length()
 /// ```
-pub fn get_felt_bitlenght(
+pub fn get_felt_bitlength(
     vm: &mut VirtualMachine,
     ids_data: &HashMap<String, HintReference>,
     ap_tracking: &ApTracking,
