@@ -1220,6 +1220,18 @@ mod tests {
             range_check_builtin.get_memory_segment_addresses(),
             (0, None),
         );
+        let keccak_builtin: BuiltinRunner = BuiltinRunner::Keccak(KeccakBuiltinRunner::new(
+            &KeccakInstanceDef::default(),
+            true,
+        ));
+        assert_eq!(keccak_builtin.get_memory_segment_addresses(), (0, None),);
+        let signature_builtin: BuiltinRunner = BuiltinRunner::Signature(
+            SignatureBuiltinRunner::new(&EcdsaInstanceDef::new(Some(10)), true),
+        );
+        assert_eq!(signature_builtin.get_memory_segment_addresses(), (0, None),);
+        let poseidon_builtin: BuiltinRunner =
+            BuiltinRunner::Poseidon(PoseidonBuiltinRunner::new(Some(32), true));
+        assert_eq!(poseidon_builtin.get_memory_segment_addresses(), (0, None),);
     }
 
     #[test]
