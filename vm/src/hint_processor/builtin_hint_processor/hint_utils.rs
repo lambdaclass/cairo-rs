@@ -270,4 +270,46 @@ mod tests {
             Err(HintError::IdentifierNotInteger(bx)) if bx.as_ref() == "value"
         );
     }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn test_get_constant_from_var_name_with_point() {
+        let constants = HashMap::from([
+            ("value".to_string(), Felt252::from(2)),
+            ("ids.MAX_LOW".to_string(), Felt252::from(20)),
+        ]);
+
+        assert_eq!(
+            *get_constant_from_var_name("MAX_LOW", &ids_data).unwrap(),
+            Felt252::from(20)
+        );
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn test_get_constant_from_var_name_without_point() {
+        let constants = HashMap::from([
+            ("value".to_string(), Felt252::from(2)),
+            ("ids.MAX_LOW".to_string(), Felt252::from(20)),
+        ]);
+
+        assert_eq!(
+            *get_constant_from_var_name("value", &ids_data).unwrap(),
+            Felt252::from(2)
+        );
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn test_get_constant_from_var_name_invalid() {
+        let constants = HashMap::from([
+            ("value".to_string(), Felt252::from(2)),
+            ("ids.MAX_LOW".to_string(), Felt252::from(20)),
+        ]);
+
+        assert_matches!(
+            get_constant_from_var_name("MAX_HIGH", &ids_data),
+            Err(HintError::MissingConstant(bx)) if *bx == "MAX_HIGH".to_string()
+        );
+    }
 }
