@@ -1,6 +1,7 @@
 ## Cairo-VM Changelog
 
 #### Upcoming Changes
+* fix: use Vec::with_capacity avoid realloc memory [#1863](https://github.com/lambdaclass/cairo-vm/pull/1863)
 
 * feat: implement `kzg` data availability hints [#1887](https://github.com/lambdaclass/cairo-vm/pull/1887)
 

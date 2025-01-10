@@ -645,7 +645,7 @@ pub(super) mod serde_impl {
                 (segment as usize, offset as usize)
             };
 
-            let mut res = vec![];
+            let mut res = Vec::with_capacity(bytes.len().div_ceil(CELL_BYTE_LEN));
             for cell_bytes in bytes.chunks(CELL_BYTE_LEN) {
                 let addr = relocatable_from_bytes(cell_bytes[0..ADDR_BYTE_LEN].try_into().ok()?);
                 let field_bytes = &cell_bytes[ADDR_BYTE_LEN..CELL_BYTE_LEN];

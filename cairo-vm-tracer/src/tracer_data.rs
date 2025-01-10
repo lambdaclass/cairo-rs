@@ -135,7 +135,7 @@ impl TracerData {
             }
         }
 
-        let mut memory_accesses: Vec<MemoryAccess> = vec![];
+        let mut memory_accesses: Vec<MemoryAccess> = Vec::with_capacity(trace.len());
         //loop of trace
         for entry in trace.iter() {
             let run_context = RunContext::new(Relocatable::from((0, entry.pc)), entry.ap, entry.fp);

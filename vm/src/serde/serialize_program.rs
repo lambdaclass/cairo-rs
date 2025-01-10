@@ -40,7 +40,7 @@ impl From<ProgramSerializer> for ProgramJson {
 
         let mut hints: BTreeMap<usize, Vec<HintParams>> = BTreeMap::new();
         for (key, hint_params_vec) in &program_json.hints {
-            let mut new_hint_params_vec = Vec::new();
+            let mut new_hint_params_vec = Vec::with_capacity(hint_params_vec.len());
             for hint_param in hint_params_vec {
                 new_hint_params_vec.push(hint_param.clone().into());
             }
@@ -48,7 +48,7 @@ impl From<ProgramSerializer> for ProgramJson {
         }
 
         let mut reference_manager: ReferenceManager = ReferenceManager {
-            references: Vec::new(),
+            references: Vec::with_capacity(program_json.reference_manager.references.len()),
         };
 
         for reference in &program_json.reference_manager.references {
@@ -218,7 +218,7 @@ impl From<&Program> for ProgramSerializer {
         let mut hints: BTreeMap<usize, Vec<HintParamsSerializer>> = BTreeMap::new();
         for (key, hint_params_vec) in BTreeMap::from(&program.shared_program_data.hints_collection)
         {
-            let mut new_hints_params = Vec::new();
+            let mut new_hints_params = Vec::with_capacity(hint_params_vec.len());
             for hint_params in hint_params_vec {
                 new_hints_params.push(hint_params.clone().into());
             }

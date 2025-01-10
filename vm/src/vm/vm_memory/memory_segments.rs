@@ -114,6 +114,7 @@ impl MemorySegmentManager {
         let mut relocation_table = vec![first_addr];
         match &self.segment_used_sizes {
             Some(segment_used_sizes) => {
+                relocation_table.reserve_exact(segment_used_sizes.len());
                 for (i, _size) in segment_used_sizes.iter().enumerate() {
                     let segment_size = self
                         .get_segment_size(i)
@@ -290,8 +291,10 @@ impl MemorySegmentManager {
             self.zero_segment_index = self.add().segment_index as usize;
         }
 
+        let n = size.saturating_sub(self.zero_segment_size);
+        self.memory.data[self.zero_segment_index].reserve_exact(n);
         // Fil zero segment with zero values until size is reached
-        for _ in 0..(size.saturating_sub(self.zero_segment_size)) {
+        for _ in 0..(n) {
             // As zero_segment_index is only accessible to the segment manager
             // we can asume that it is always valid and index direcly into it
             self.memory.data[self.zero_segment_index].push(MemoryCell::new(Felt252::ZERO.into()))

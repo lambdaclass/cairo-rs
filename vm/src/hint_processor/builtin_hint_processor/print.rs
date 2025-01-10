@@ -46,12 +46,12 @@ pub fn print_array(
 ) -> Result<(), HintError> {
     print_name(vm, ids_data, ap_tracking)?;
 
-    let mut acc = Vec::new();
     let arr = get_ptr_from_var_name("arr", vm, ids_data, ap_tracking)?;
     let arr_len = get_integer_from_var_name("arr_len", vm, ids_data, ap_tracking)?;
     let arr_len = arr_len.to_usize().ok_or_else(|| {
         HintError::CustomHint(String::from("arr_len must be a positive integer").into_boxed_str())
     })?;
+    let mut acc = Vec::with_capacity(arr_len);
     for i in 0..arr_len {
         let val = vm.get_integer((arr + i)?)?;
         acc.push(val);
@@ -109,7 +109,7 @@ pub fn print_dict(
                 acc.insert(key, DictValue::Int(*value));
             }
             MaybeRelocatable::RelocatableValue(val) => {
-                let mut structure = Vec::new();
+                let mut structure = Vec::with_capacity(pointer_size);
                 for i in 0..pointer_size {
                     let val = *vm.get_integer((*val + i)?)?.as_ref();
                     structure.push(val);

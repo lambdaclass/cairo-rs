@@ -578,7 +578,7 @@ impl Memory {
     /// Gets a range of memory values from addr to addr + size
     /// The outputed range may contain gaps if the original memory has them
     pub fn get_range(&self, addr: Relocatable, size: usize) -> Vec<Option<Cow<MaybeRelocatable>>> {
-        let mut values = Vec::new();
+        let mut values = Vec::with_capacity(size);
 
         for i in 0..size {
             values.push((addr + i).ok().and_then(|x| self.get(&x)));
@@ -614,7 +614,7 @@ impl Memory {
         addr: Relocatable,
         size: usize,
     ) -> Result<Vec<Cow<Felt252>>, MemoryError> {
-        let mut values = Vec::new();
+        let mut values = Vec::with_capacity(size);
 
         for i in 0..size {
             values.push(self.get_integer((addr + i)?)?);

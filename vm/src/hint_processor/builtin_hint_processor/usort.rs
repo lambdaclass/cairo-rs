@@ -57,7 +57,7 @@ pub fn usort_body(
         positions_dict.entry(val).or_default().push(i);
     }
 
-    let mut multiplicities: Vec<usize> = Vec::new();
+    let mut multiplicities: Vec<usize> = Vec::with_capacity(output.len());
     for k in output.iter() {
         multiplicities.push(positions_dict[k].len());
     }
