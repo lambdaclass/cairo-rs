@@ -14,7 +14,7 @@ This diagram was produced using this [mermaid code](./diagram/cairo_vm_flow_diag
 
 ## How does the vm manage memory?
 
-Cairo's memory is read-only (can only be written once), and requires that memory addresses accessed by the program must be continuous. If gaps are present they will be filled with arbitrary values.
+Cairo's memory is read-only (can only be written once), and requires that memory addresses accessed by the program must be contiguous. If gaps are present they will be filled with arbitrary values.
 
 The memory itself is a list of continuous segments, the size of each segment may vary and can only be known once the program terminates. Absolute addresses of every memory cell within a segment can only be determined at the end of a vm run (Relocatable values are used to represent them, indicating the segment number and the offset).
 
@@ -25,7 +25,7 @@ The different segments:
 
 ## Registers
 
-**Allocation Pointer (ap)** Points to a yet unused memory cell.
+**Allocation Pointer (ap)** Points to an unused memory cell.
 **Frame Pointer (fp)** Points to the frame of the current function. The addresses of all the function's arguments and local variables are relative to the value of this register. It's equal to ap when the function starts, and remains constant throughout the scope of it. When a function2 is called inside a function1, the value of fp changes once function2 starts, but it is restored back to function1's value once function2 ends (this is needed to keep track of function1's value, as ap will have changed).
 **Program Counter (pc)** Points to the current instruction. Each instruction takes 1 or 2 felts(2 when an imm is used), and pc advances by 1 or 2 after each instruction, other ways of changing this register is by jumps.
 
@@ -76,7 +76,7 @@ Functions:
     * CALL
     * RET
     * NOP
-Doesnt check anything for the last two
+Doesn't check anything for the last two.
 * [`run_instruction(instruction)`](https://github.com/starkware-libs/cairo-lang/blob/b614d1867c64f3fb2cf4a4879348cfcf87c3a5a7/src/starkware/cairo/lang/vm/vm_core.py#L410): compute_operands, opcode_assertion, writes pc, ap and fp to trace, updates accessed_adresses, update_registers, and increases the current_step by one
 * [`step()`](https://github.com/starkware-libs/cairo-lang/blob/b614d1867c64f3fb2cf4a4879348cfcf87c3a5a7/src/starkware/cairo/lang/vm/vm_core.py#L443) disables skip_next_instruction, executes hints, then clears ids and memory(used by hints), skips if skip_next_instruction is enabled, decode_current_instruction, runs the decoded instruction with run_instruction.
 
@@ -121,7 +121,7 @@ ValidatedMemoryDict structure:
 
 validated_memory[addr] = `__memory`[addr]
 
-### What are these valdation_rules?
+### What are these validation_rules?
 
 It is a dictionary that maps a segment index to a list of validation rules (a tuple with the rule and the args). A ValidationRule is callable. It behaves the same way a Rule would (despite different definition), it can be used to validate a memory cell by calling `__validate_memory_cell` with the address and the value (from the MemoryDict), or by using `validate_existing_memory` to validate every address in memory.
 
@@ -154,7 +154,7 @@ The `StrippedProgram` contains minimal information, it doesn't have hints, ident
 This class is a marshmellowdataclass, this allows many of its attributes to be serialized
 [Marshmellow Documentation](https://marshmallow.readthedocs.io/en/stable/)
     
-A `CairoHint` contains a `code` (a string) and accesible_scopes (a list of ScopedName, that can be serialized as strings), and `flow_tracking_data`, a FlowTrackingDataActual.
+A `CairoHint` contains a `code` (a string) and accessible_scopes (a list of ScopedName, that can be serialized as strings), and `flow_tracking_data`, a FlowTrackingDataActual.
 Where `ScopedName` is a frozen dataclass that contains a path as a string tuple and a SEPARATOR ("."), this should be the path for imports (shuch as starkware.common.serialize). 
 
 A `FlowTrackingDataActual` contains an `ap_tracking` (as a RegTrackingData), a `reference_ids`, as a dictionary that maps reference names (ScopedName) to reference instances (int). A RegTrackingData is used to track the progress of a register during a run. It contains a group (int) which starts at zero and increases by one each time an unknown change happens, and an offset (int) which begins at zero and increases the same way the register does.
