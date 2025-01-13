@@ -2,6 +2,8 @@
 
 #### Upcoming Changes
 
+* fix: Always use a normal segment in first SegmentArena segment [#1845](https://github.com/lambdaclass/cairo-vm/pull/1845)
+
 * feat: implement `kzg` data availability hints [#1887](https://github.com/lambdaclass/cairo-vm/pull/1887)
 
 #### [2.0.0-rc3] - 2024-12-26

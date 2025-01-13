@@ -57,7 +57,7 @@ impl DictManagerExecScope {
 
     /// Allocates a new segment for a new dictionary and return the start of the segment.
     pub fn new_default_dict(&mut self, vm: &mut VirtualMachine) -> Result<Relocatable, HintError> {
-        let dict_segment = if self.use_temporary_segments {
+        let dict_segment = if self.use_temporary_segments && self.trackers.len() > 0 {
             vm.add_temporary_segment()
         } else {
             vm.add_memory_segment()
@@ -123,9 +123,26 @@ impl DictManagerExecScope {
     /// Relocates all dictionaries into a single segment
     /// Does nothing if use_temporary_segments is set to false
     pub fn relocate_all_dictionaries(&mut self, vm: &mut VirtualMachine) -> Result<(), HintError> {
-        if self.use_temporary_segments {
-            let mut prev_end = vm.add_memory_segment();
-            for tracker in &self.trackers {
+        // We expect the first segment to be a normal one, which doesn't require relocation. So
+        // there is nothing to do unless there are at least two segments.
+        if self.use_temporary_segments && self.trackers.len() > 1 {
+            let first_segment = self.trackers.get(0).unwrap();
+            if first_segment.start.segment_index < 0 {
+                return Err(HintError::CustomHint(
+                    "First dict segment should not be temporary"
+                        .to_string()
+                        .into_boxed_str(),
+                ));
+            }
+            let mut prev_end = first_segment.end.unwrap_or_default();
+            for tracker in &self.trackers[1..] {
+                if tracker.start.segment_index >= 0 {
+                    return Err(HintError::CustomHint(
+                        "Dict segment should be temporary"
+                            .to_string()
+                            .into_boxed_str(),
+                    ));
+                }
                 vm.add_relocation_rule(tracker.start, prev_end.into())?;
                 prev_end += (tracker.end.unwrap_or_default() - tracker.start)?;
                 prev_end += 1;
