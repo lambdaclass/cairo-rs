@@ -7,9 +7,19 @@ STARKNET_SIERRA_COMPILE_CAIRO_1:=cairo1/bin/starknet-sierra-compile
 STARKNET_COMPILE_CAIRO_2:=cairo2/bin/starknet-compile
 STARKNET_SIERRA_COMPILE_CAIRO_2:=cairo2/bin/starknet-sierra-compile
 
+export PATH:=$(PATH):$(HOME)/.cargo/bin
+
 ifndef PROPTEST_CASES
 	PROPTEST_CASES:=10
 	export PROPTEST_CASES
+endif
+
+ifeq (, $(shell which uv))
+	PIP_CMD=python -m pip
+	VENV_CMD=python -m venv
+else
+	PIP_CMD=uv pip
+	VENV_CMD=uv venv
 endif
 
 .PHONY: build-cairo-1-compiler build-cairo-1-compiler-macos build-cairo-2-compiler build-cairo-2-compiler-macos \
@@ -204,6 +214,9 @@ build-cairo-2-compiler:
 		&& mv cairo/ cairo2/; \
 	fi
 
+uv-program:
+	curl --proto '=https' --tlsv1.2 -LsSf https://github.com/astral-sh/uv/releases/download/0.1.41/uv-installer.sh | sh
+
 cargo-deps:
 	cargo install --version 0.3.1 iai-callgrind-runner
 	cargo install --version 1.1.0 cargo-criterion
@@ -218,23 +231,23 @@ cairo1-run-deps:
 
 deps: create-proof-programs-symlinks cargo-deps build-cairo-1-compiler build-cairo-2-compiler cairo1-run-deps
 	pyenv install -s pypy3.9-7.3.9
-	PYENV_VERSION=pypy3.9-7.3.9 python -m venv cairo-vm-pypy-env
+	PYENV_VERSION=pypy3.9-7.3.9 $(VENV_CMD) cairo-vm-pypy-env
 	. cairo-vm-pypy-env/bin/activate ; \
-	pip install -r requirements.txt ; \
+	$(PIP_CMD) install -r requirements.txt ; \
 	pyenv install -s 3.9.15
-	PYENV_VERSION=3.9.15 python -m venv cairo-vm-env
+	PYENV_VERSION=3.9.15 $(VENV_CMD) cairo-vm-env
 	. cairo-vm-env/bin/activate ; \
-	pip install -r requirements.txt ; \
+	$(PIP_CMD) install -r requirements.txt ; \
 
 deps-macos: create-proof-programs-symlinks cargo-deps build-cairo-1-compiler-macos build-cairo-2-compiler-macos cairo1-run-deps
 	arch -x86_64 pyenv install -s pypy3.9-7.3.9
-	PYENV_VERSION=pypy3.9-7.3.9 python -m venv cairo-vm-pypy-env
+	PYENV_VERSION=pypy3.9-7.3.9 $(VENV_CMD) cairo-vm-pypy-env
 	. cairo-vm-pypy-env/bin/activate ; \
-	CFLAGS=-I/opt/homebrew/opt/gmp/include LDFLAGS=-L/opt/homebrew/opt/gmp/lib pip install -r requirements.txt ; \
+	CFLAGS=-I/opt/homebrew/opt/gmp/include LDFLAGS=-L/opt/homebrew/opt/gmp/lib $(PIP_CMD) install -r requirements.txt ; \
 	pyenv install -s 3.9.15
-	PYENV_VERSION=3.9.15 python -m venv cairo-vm-env
+	PYENV_VERSION=3.9.15 $(VENV_CMD) cairo-vm-env
 	. cairo-vm-env/bin/activate ; \
-	CFLAGS=-I/opt/homebrew/opt/gmp/include LDFLAGS=-L/opt/homebrew/opt/gmp/lib pip install -r requirements.txt ; \
+	CFLAGS=-I/opt/homebrew/opt/gmp/include LDFLAGS=-L/opt/homebrew/opt/gmp/lib $(PIP_CMD) install -r requirements.txt ; \
 
 $(RELBIN):
 	cargo build --release
@@ -376,7 +389,7 @@ clean:
 fuzzer-deps: build
 	cargo +nightly install cargo-fuzz
 	. cairo-vm-env/bin/activate; \
-		pip install atheris==2.2.2 maturin==1.2.3; \
+		$(PIP_CMD) install atheris==2.2.2 maturin==1.2.3; \
 		cd fuzzer/; \
 		maturin develop
 
