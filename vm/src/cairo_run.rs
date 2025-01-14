@@ -75,6 +75,7 @@ pub fn cairo_run_program_with_initial_scope(
         cairo_run_config.dynamic_layout_params.clone(),
         cairo_run_config.proof_mode,
         cairo_run_config.trace_enabled,
+        cairo_run_config.disable_trace_padding,
     )?;
 
     cairo_runner.exec_scopes = exec_scopes;
@@ -162,6 +163,7 @@ pub fn cairo_run_pie(
         cairo_run_config.dynamic_layout_params.clone(),
         false,
         cairo_run_config.trace_enabled,
+        cairo_run_config.disable_trace_padding,
     )?;
 
     let end = cairo_runner.initialize(allow_missing_builtins)?;
@@ -235,6 +237,7 @@ pub fn cairo_run_fuzzed_program(
         cairo_run_config.dynamic_layout_params.clone(),
         cairo_run_config.proof_mode,
         cairo_run_config.trace_enabled,
+        cairo_run_config.disable_trace_padding,
     )?;
 
     let _end = cairo_runner.initialize(allow_missing_builtins)?;

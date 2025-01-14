@@ -258,6 +258,7 @@ pub fn cairo_run_program(
         cairo_run_config.dynamic_layout_params.clone(),
         runner_mode,
         cairo_run_config.trace_enabled,
+        false,
     )?;
     let end = runner.initialize(cairo_run_config.proof_mode)?;
     load_arguments(&mut runner, &cairo_run_config, main_func, initial_gas)?;

@@ -199,27 +199,39 @@ impl BuiltinRunner {
                     // Dynamic layout allows for builtins with ratio 0
                     Some(0) => Ok(0),
                     Some(ratio) => {
-                        let min_step_num = (ratio * self.instances_per_component()) as usize;
-                        let min_step = if let Some(ratio_den) = self.ratio_den() {
-                            div_ceil(min_step_num, ratio_den as usize)
+                        // if we disable trace padding, we don't need to check the min_step,
+                        // since we won't have the guarantee of number of steps being padded to
+                        // accommodate each builtin size.
+                        if !vm.disable_trace_padding {
+                            let min_step_num = (ratio * self.instances_per_component()) as usize;
+                            let min_step = if let Some(ratio_den) = self.ratio_den() {
+                                div_ceil(min_step_num, ratio_den as usize)
+                            } else {
+                                min_step_num
+                            };
+
+                            if vm.current_step < min_step {
+                                return Err(InsufficientAllocatedCellsError::MinStepNotReached(
+                                    Box::new((min_step, self.name())),
+                                )
+                                .into());
+                            };
+                        }
+                        let ratio_den = self.ratio_den().unwrap_or(1);
+                        let numerator = vm.current_step * ratio_den as usize;
+
+                        let allocated_instances = if vm.disable_trace_padding {
+                            // if no trace padding is used, we can't guarantee that the number of
+                            // instances is a multiple of the ratio, so we round up so the size will
+                            // be enough (more than used instances). This is fine, since in this
+                            // case we don't send this into a proof under the assumption of
+                            // n_steps being padded to accommodate each builtin size.
+                            div_ceil(numerator, ratio as usize)
                         } else {
-                            min_step_num
+                            safe_div_usize(numerator, ratio as usize)
+                                .map_err(|_| MemoryError::ErrorCalculatingMemoryUnits)?
                         };
 
-                        if vm.current_step < min_step {
-                            return Err(InsufficientAllocatedCellsError::MinStepNotReached(
-                                Box::new((min_step, self.name())),
-                            )
-                            .into());
-                        };
-
-                        let allocated_instances = if let Some(ratio_den) = self.ratio_den() {
-                            safe_div_usize(vm.current_step * ratio_den as usize, ratio as usize)
-                                .map_err(|_| MemoryError::ErrorCalculatingMemoryUnits)?
-                        } else {
-                            safe_div_usize(vm.current_step, ratio as usize)
-                                .map_err(|_| MemoryError::ErrorCalculatingMemoryUnits)?
-                        };
                         Ok(allocated_instances)
                     }
                 }
@@ -693,11 +705,13 @@ impl From<ModBuiltinRunner> for BuiltinRunner {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cairo_run::{cairo_run, CairoRunConfig};
     use crate::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::BuiltinHintProcessor;
     use crate::relocatable;
     use crate::types::builtin_name::BuiltinName;
     use crate::types::instance_definitions::mod_instance_def::ModInstanceDef;
     use crate::types::instance_definitions::LowRatio;
+    use crate::types::layout_name::LayoutName;
     use crate::types::program::Program;
     use crate::utils::test_utils::*;
     use crate::vm::errors::memory_errors::InsufficientAllocatedCellsError;
@@ -875,6 +889,59 @@ mod tests {
             .unwrap();
 
         assert_eq!(builtin.get_allocated_memory_units(&cairo_runner.vm), Ok(5));
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn compare_proof_mode_with_and_without_disable_trace_padding() {
+        let program_data =
+            include_bytes!("../../../../../cairo_programs/proof_programs/pedersen_test.json");
+
+        let config_false = CairoRunConfig {
+            disable_trace_padding: false,
+            proof_mode: true,
+            layout: LayoutName::all_cairo,
+            ..Default::default()
+        };
+        let mut hint_processor_false = BuiltinHintProcessor::new_empty();
+        let runner_false =
+            cairo_run(program_data, &config_false, &mut hint_processor_false).unwrap();
+        let last_step_false = runner_false.vm.current_step;
+
+        assert!(last_step_false.is_power_of_two());
+
+        let config_true = CairoRunConfig {
+            disable_trace_padding: true,
+            proof_mode: true,
+            layout: LayoutName::all_cairo,
+            ..Default::default()
+        };
+        let mut hint_processor_true = BuiltinHintProcessor::new_empty();
+        let runner_true = cairo_run(program_data, &config_true, &mut hint_processor_true).unwrap();
+        let last_step_true = runner_true.vm.current_step;
+
+        // Ensure the last step is not a power of two - true for this specific program, not always.
+        assert!(!last_step_true.is_power_of_two());
+
+        assert!(last_step_true < last_step_false);
+
+        let builtin_runners_false = &runner_false.vm.builtin_runners;
+        let builtin_runners_true = &runner_true.vm.builtin_runners;
+        assert_eq!(builtin_runners_false.len(), builtin_runners_true.len());
+        // Compare allocated instances for each pair of builtin runners
+        for (builtin_runner_false, builtin_runner_true) in builtin_runners_false
+            .iter()
+            .zip(builtin_runners_true.iter())
+        {
+            let allocated_false = builtin_runner_false
+                .get_allocated_instances(&runner_false.vm)
+                .unwrap_or(0);
+            let allocated_true = builtin_runner_true
+                .get_allocated_instances(&runner_true.vm)
+                .unwrap_or(0);
+
+            assert!(allocated_false >= allocated_true);
+        }
     }
 
     #[test]

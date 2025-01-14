@@ -116,6 +116,7 @@ fn run_cairo_1_entrypoint(
         None,
         false,
         false,
+        false,
     )
     .unwrap();
 
@@ -219,6 +220,7 @@ fn run_cairo_1_entrypoint_with_run_resources(
         &(contract_class.clone().try_into().unwrap()),
         LayoutName::all_cairo,
         None,
+        false,
         false,
         false,
     )

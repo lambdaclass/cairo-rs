@@ -49,7 +49,7 @@ fn run() {
             whitelists.push(whitelist_file.allowed_hint_expressions);
         }
     }
-    let mut vm = VirtualMachine::new(false);
+    let mut vm = VirtualMachine::new(false, false);
     let mut hint_executor = BuiltinHintProcessor::new_empty();
     let (ap_tracking_data, reference_ids, references, mut exec_scopes, constants) = (
         ApTracking::default(),

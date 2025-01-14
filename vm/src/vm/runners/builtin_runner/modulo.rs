@@ -817,7 +817,7 @@ mod tests {
         let mut hint_processor = BuiltinHintProcessor::new_empty();
         let program = Program::from_bytes(program_data, Some("main")).unwrap();
         let mut runner =
-            CairoRunner::new(&program, LayoutName::all_cairo, None, true, false).unwrap();
+            CairoRunner::new(&program, LayoutName::all_cairo, None, true, false, false).unwrap();
 
         let end = runner.initialize(false).unwrap();
         // Modify add_mod & mul_mod params

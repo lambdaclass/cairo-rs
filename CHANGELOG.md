@@ -2,6 +2,8 @@
 
 #### Upcoming Changes
 
+* fix: Fix no trace padding flow in proof mode [#1909](https://github.com/lambdaclass/cairo-vm/pull/1909)
+
 * feat: implement `kzg` data availability hints [#1887](https://github.com/lambdaclass/cairo-vm/pull/1887)
 
 #### [2.0.0-rc3] - 2024-12-26

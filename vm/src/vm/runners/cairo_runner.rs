@@ -176,6 +176,7 @@ impl CairoRunner {
         dynamic_layout_params: Option<CairoLayoutParams>,
         mode: RunnerMode,
         trace_enabled: bool,
+        disable_trace_padding: bool,
     ) -> Result<CairoRunner, RunnerError> {
         let cairo_layout = match layout {
             LayoutName::plain => CairoLayout::plain_instance(),
@@ -197,7 +198,7 @@ impl CairoRunner {
         };
         Ok(CairoRunner {
             program: program.clone(),
-            vm: VirtualMachine::new(trace_enabled),
+            vm: VirtualMachine::new(trace_enabled, disable_trace_padding),
             layout: cairo_layout,
             final_pc: None,
             program_base: None,
@@ -226,6 +227,7 @@ impl CairoRunner {
         dynamic_layout_params: Option<CairoLayoutParams>,
         proof_mode: bool,
         trace_enabled: bool,
+        disable_trace_padding: bool,
     ) -> Result<CairoRunner, RunnerError> {
         if proof_mode {
             Self::new_v2(
@@ -234,6 +236,7 @@ impl CairoRunner {
                 dynamic_layout_params,
                 RunnerMode::ProofModeCanonical,
                 trace_enabled,
+                disable_trace_padding,
             )
         } else {
             Self::new_v2(
@@ -242,6 +245,7 @@ impl CairoRunner {
                 dynamic_layout_params,
                 RunnerMode::ExecutionMode,
                 trace_enabled,
+                disable_trace_padding,
             )
         }
     }

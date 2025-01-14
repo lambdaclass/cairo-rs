@@ -89,6 +89,7 @@ pub struct VirtualMachine {
     pub(crate) rc_limits: Option<(isize, isize)>,
     skip_instruction_execution: bool,
     run_finished: bool,
+    pub(crate) disable_trace_padding: bool,
     instruction_cache: Vec<Option<Instruction>>,
     #[cfg(feature = "test_utils")]
     pub(crate) hooks: crate::vm::hooks::Hooks,
@@ -96,7 +97,7 @@ pub struct VirtualMachine {
 }
 
 impl VirtualMachine {
-    pub fn new(trace_enabled: bool) -> VirtualMachine {
+    pub fn new(trace_enabled: bool, disable_trace_padding: bool) -> VirtualMachine {
         let run_context = RunContext {
             pc: Relocatable::from((0, 0)),
             ap: 0,
@@ -118,6 +119,7 @@ impl VirtualMachine {
             segments: MemorySegmentManager::new(),
             rc_limits: None,
             run_finished: false,
+            disable_trace_padding,
             instruction_cache: Vec::new(),
             #[cfg(feature = "test_utils")]
             hooks: Default::default(),
@@ -1255,6 +1257,7 @@ impl VirtualMachineBuilder {
             #[cfg(feature = "test_utils")]
             hooks: self.hooks,
             relocation_table: None,
+            disable_trace_padding: false,
         }
     }
 }
@@ -1444,7 +1447,7 @@ mod tests {
             op1: MaybeRelocatable::Int(Felt252::from(10)),
         };
 
-        let mut vm = VirtualMachine::new(false);
+        let mut vm = VirtualMachine::new(false, false);
         vm.run_context.pc = Relocatable::from((0, 4));
         vm.run_context.ap = 5;
         vm.run_context.fp = 6;

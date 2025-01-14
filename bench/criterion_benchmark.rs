@@ -33,6 +33,7 @@ fn build_many_runners(c: &mut Criterion) {
                     black_box(None),
                     black_box(false),
                     black_box(false),
+                    black_box(false),
                 )
                 .unwrap(),
             );
@@ -51,6 +52,7 @@ fn load_program_data(c: &mut Criterion) {
                     &program,
                     LayoutName::starknet_with_keccak,
                     None,
+                    false,
                     false,
                     false,
                 )
