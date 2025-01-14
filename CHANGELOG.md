@@ -2,6 +2,7 @@
 
 #### Upcoming Changes
 
+* feat: make `builtins` public in `Program` struct [#1908](https://github.com/lambdaclass/cairo-vm/pull/1907)
 * feat: implement `kzg` data availability hints [#1887](https://github.com/lambdaclass/cairo-vm/pull/1887)
 
 #### [2.0.0-rc3] - 2024-12-26
